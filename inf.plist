@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>WANDIZZ</string>
+	<key>CFBundleExecutable</key>
+	<string>WANDIZZ</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Created by Qt/QMake</string>
+	<key>CFBundleIconName</key>
+	<string>logo</string>
+	<key>CFBundleIdentifier</key>
+	<string>WANDIZZ.WANDIZZ</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.2</string>
+	<key>CFBundleName</key>
+	<string>WANDIZZ</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>4.3</string>
+	<key>CFBundleSignature</key>
+	<string>${QMAKE_PKGINFO_TYPEINFO}</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>DefaultDeploymentTarget</key>
+	<string>13.2</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>MinimumOSVersion</key>
+	<string>10.0</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>wandizz.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>To take photo</string>
+	<key>NSHighResolutionCapable</key>
+	<string>false</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>USING FOR STATS</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>USING FOR STATS</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>USING FOR MEDIA RECOGNIZE</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To pick up avatar picture</string>
+	<key>UILaunchImageFile</key>
+	<string>launch.png</string>
+	<key>UILaunchStoryboardName</key>
+	<string>Launch.xib</string>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIStatusBarHidden</key>
+	<true/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+	<key>UIViewEdgeAntialiasing</key>
+	<true/>
+</dict>
+</plist>

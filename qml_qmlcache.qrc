@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<RCC>
+    <qresource prefix="/">
+        <file alias="gui/browser_buttons/back.png">gui/browser_buttons/back.png</file>
+        <file alias="gui/browser_buttons/exit.png">gui/browser_buttons/exit.png</file>
+        <file alias="gui/browser_buttons/forward.png">gui/browser_buttons/forward.png</file>
+        <file alias="gui/browser_buttons/refresh.png">gui/browser_buttons/refresh.png</file>
+        <file alias="gui/browser_buttons/stop.png">gui/browser_buttons/stop.png</file>
+    </qresource>
+</RCC>
