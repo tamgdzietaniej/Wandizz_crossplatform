@@ -14,6 +14,7 @@
 #include "downloader.h"
 #include "downloaderStd.h"
 #include "socialLogin.h"
+#include "myvideosurface.h"
 
 class navigation:public QStackedWidget{
     Q_OBJECT
@@ -22,6 +23,7 @@ public:
     ~navigation();
 
     double opac;
+    QString gone_to;
     QPixmap*vpix;
     QPixmap bimg;
     QTimer*ktimer;
@@ -30,15 +32,16 @@ public:
     QString url_to_load="";
     QString stime;
     QStringList fav_scenes_list,fav_items_list,fav_videos_list;
-    QString title,netfile;
+    QString
+    title,netfile;
     QString user_data="";
     bool menuopened;
     QString curr_favs;
-  //  QThread mthread;
+    //  QThread mthread;
     bool creds_ok=false;
     bool prevent_click;
     QJsonArray titles,fav_titles;
-    void set_user();  
+    void set_user();
     QFuture<void> future;
     QRect shadow_geo;
     bool splash;
@@ -81,6 +84,7 @@ public:
     QLabel* waiter;
     QPixmap* waiter_anim;
     QLinearGradient gradient,gradient2;
+    bool debg;
 public slots:
     void init_app();
     void info(QString);
@@ -110,6 +114,7 @@ public slots:
     void show_waiter();
     void hide_waiter();
     void show_web(QString);
+
 private slots:
     void setSocialData(QString,QString,QString,QString,QString);
     void terminateCreds();
@@ -120,7 +125,6 @@ private slots:
     void update_user(QString,QString,QString,QString);
     void get_current_user_data();
     void delete_item(int,QString);
-    void show_carousel(QString,QString,QString);
     void go_to(QString,QStringList params={});
     // void go_to(QString);
     void show_fav_scenes();

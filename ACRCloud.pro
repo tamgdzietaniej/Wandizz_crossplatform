@@ -1,4 +1,5 @@
-QT       += core gui network multimedia positioning opengl quick qml quickwidgets multimediawidgets webview
+QT       += core gui network multimedia positioning opengl quick qml quickwidgets multimediawidgets webview gui-private
+
 CONFIG +=  mobility localization
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TEMPLATE = app
@@ -22,6 +23,7 @@ SOURCES += main.cpp \
     menu.cpp \
     mhelper.cpp \
     myvideosurface.cpp \
+    permissions.cpp \
     signin.cpp \
     socialLogin.cpp \
     syncscreen.cpp \
@@ -62,6 +64,7 @@ audiolevel.h \
     myvideosurface.h \
     navigation.h \
     gllabel.h \
+    permissions.h \
     profsettings.h \
     signin.h \
     socialLogin.h \
@@ -112,16 +115,17 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 android{
+include($$PWD/vendor/vendor.pri)01
     QT += androidextras
     HEADERS += share_cross.h
     SOURCES += share_cross.cpp
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
     android: include(android/ssl/openssl.pri)
     VERSION = 1.2.6
-    ANDROID_VERSION_CODE = '9'
+    ANDROID_VERSION_CODE = '21'
     ANDROID_VERSION_NAME = 'WANDIZZ_test'
-ANDROID_MIN_SDK_VERSION = '29'
-ANDROID_TARGET_SDK_VERSION = '24'
+    ANDROID_MIN_SDK_VERSION = '15'
+    ANDROID_TARGET_SDK_VERSION = '28'
 
 DISTFILES += \
     android/src/wandizz/shares.java \
@@ -133,7 +137,7 @@ DISTFILES += \
 
 DISTFILES += \
 ANDROID_ABIS = armeabi-v7a arm64-v8a
-
+SUPPORTED_ABIS = armeabi-v7a arm64-v8a
 
 
 ANDROID_ABIS = armeabi-v7a arm64-v8a
@@ -151,4 +155,9 @@ DISTFILES += \
 
 }
 
-ANDROID_ABIS = armeabi-v7a
+DISTFILES += \
+    android/src/org/bytran/bytran/RequestPermissions.java \
+    vendor/vendor.pri
+
+ANDROID_ABIS = armeabi-v7a arm64-v8a
+

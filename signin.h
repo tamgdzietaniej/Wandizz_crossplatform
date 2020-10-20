@@ -29,8 +29,6 @@ private slots:
     void on_b_twitter_released();
     void on_b_facebook_pressed();
     void on_b_facebook_released();
-    void on_b_google_pressed();
-    void on_b_google_released();
     void on_b_create_acc_pressed();
     void on_b_create_acc_released();
 

@@ -5,7 +5,6 @@ SignIn::SignIn(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::SignIn)
 {
-    qDebug()<<"SIGNIN CONSTRUCT";
     ui->setupUi(this);
     ui->b_exit->hide();
     ui->shadow->hide();
@@ -18,16 +17,13 @@ SignIn::SignIn(QWidget *parent) :
     ui->logo_twitter->lower();
     ui->shadow->setParent(ui->anframe);
 }
-void SignIn::shSs(){
-
-    qDebug()<<"SH:"<<ui->logo_mid->size()<<ui->logo_mid->isVisible()<<ui->logo_mid->pos()<<ui->logo_mid;
+void SignIn::shSs(){;
     ui->logo_mid->raise();
     ui->logo_mid->show();
 }
 void SignIn::toggle_auth(bool toggle){
     ui->verlabel->setText("ver:"+QString::number(version));
     ui->anframe->setFixedHeight(ui->b_signin->geometry().bottom());
-    qDebug()<<"NFRAME:"<<ui->anframe->geometry()<<ui->anframe->sizeHint();
     ui->anframe->setEnabled(toggle);
     ui->anframe->setVisible(toggle);
     ui->anframe->move(ui->anframe->x(),height()-ui->anframe->height());
@@ -52,7 +48,6 @@ void SignIn::on_b_signup_clicked()
 }
 void SignIn::on_b_signin_clicked()
 {
-    qDebug()<<"RECOVERY";
     emit go("accrec",{});
 }
 
@@ -99,16 +94,6 @@ void SignIn::on_b_facebook_pressed()
 void SignIn::on_b_facebook_released()
 {
     animateButton(ui->b_facebook,false);
-}
-
-void SignIn::on_b_google_pressed()
-{
-    //animateButton(ui->b_google);
-}
-
-void SignIn::on_b_google_released()
-{
-    //animateButton(ui->b_google,false);
 }
 
 void SignIn::on_b_create_acc_pressed()

@@ -458,7 +458,7 @@ border:none;</string>
 border-color:black;
 border-radius:10px;
 border:2px solid #555;
-background:#0008;
+background:trgba(0,0,0,0);
 color:white;
 };</string>
     </property>

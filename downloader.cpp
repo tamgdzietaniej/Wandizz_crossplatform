@@ -6,7 +6,7 @@ downloader::downloader(QObject *parent) : QObject(parent)
     connect(t,SIGNAL(timeout()),this,SLOT(begin_download()),Qt::QueuedConnection);
     mthread=new QThread();
     writer=new write_buffers();
-  //  connect(writer,SIGNAL(destroyed()),mthread,SLOT(quit()));
+    //  connect(writer,SIGNAL(destroyed()),mthread,SLOT(quit()));
     writer->moveToThread(mthread);
     connect(mthread,SIGNAL(started()),writer,SLOT(clear()));
     mthread->start();
@@ -39,7 +39,7 @@ void downloader::push_url(QString url,QString fn){
     total++;
     pending++;
     if(!t->isActive()){
-        t->start(10);
+        t->start(50);
     }
 }
 void downloader::begin_download(){
@@ -52,20 +52,22 @@ void downloader::begin_download(){
         write_buffers::active++;
         QUrl url=write_buffers::tasks.first()->url;
         int sys_id=writer->set_task();
-        QNetworkRequest* req=new QNetworkRequest(url);
-        req->setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute,true);
-        req->setRawHeader("Connection","Keep-Alive");
-        req->setRawHeader("Keep-Alive","timeout=30, max=100;");
-        QNetworkReply* reply=manager->get(*req);
+        QNetworkRequest req(url);
+        qDebug()<<"downloader:"<<url;
+        //    req->setAttribute(QNetworkRequest::HttpPipeliningAllowedAttribute,true);
+        //    req->setRawHeader("Connection","Keep-Alive");
+        //     req->setRawHeader("Keep-Alive","timeout=30, max=100;");
+        QNetworkReply* reply(manager->get(req));
         reply->setObjectName(QString::number(sys_id));
         if(write_buffers::active<max_active && t->interval()!=5){
-            t->setInterval(1);
+            t->setInterval(50);
+
         }
     } else {
         if(write_buffers::tasks.count()==0){
             t->stop();
         } else {
-            t->setInterval(100);
+            t->setInterval(250);
         }
     }
     dact=false;
@@ -74,5 +76,5 @@ downloader::~downloader(){
     exiting=true;
     qDebug()<<"WAND:DN:DESTR";
     mthread->exit();
-    mthread->wait(5000);
+    //   mthread->wait(5000);
 }

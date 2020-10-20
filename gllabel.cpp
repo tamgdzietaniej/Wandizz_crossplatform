@@ -9,7 +9,7 @@ gLabel::gLabel(QWidget* parent,QString o):QOpenGLWidget(parent),
     need_update(false),
     to_hide(false),
     stim(200),
-    debg(true)
+    debg(false)
 {
     mainh=main_h-(main_h/2-ms/2);
     setStyleSheet("border:none;");
@@ -64,7 +64,7 @@ void gLabel::mouseMoveEvent(QMouseEvent *e){
 }
 void gLabel::showEvent(QShowEvent* e){
     if(need_hide){
-        qDebug()<<index<<type<<" ignoring show";
+        if(debg)qDebug()<<index<<type<<" ignoring show";
         e->ignore();
         return;
     }
@@ -91,7 +91,7 @@ void gLabel::mousePressEvent(QMouseEvent *event){
     pressed=true;
 }
 void gLabel::catch_event(){
-    //   qDebug()<<"GLA:catchevent:"<<index<<type<<"locked:"<<locked;
+    //   if(debg)qDebug()<<"GLA:catchevent:"<<index<<type<<"locked:"<<locked;
     event_owner=true;
 }
 void gLabel::mouseReleaseEvent(QMouseEvent *event){
@@ -140,7 +140,7 @@ void gLabel::check_timer(){
         if ( need_switch || need_update )
         {
             timer.start(500);
-            //      qDebug()<<"NEED RE-SWITCH"<<index;
+            //      if(debg)qDebug()<<"NEED RE-SWITCH"<<index;
             if(!isVisible())show();
             update();
             //     QApplication::processEvents();
@@ -211,7 +211,7 @@ void gLabel::unlock(){
     setDisabled(false);
     setUpdatesEnabled(true);
     locked=false;
-    //     qDebug()<<"UNLOCK:"<<index<<type<<isVisible()<<is_poster<<need_hide<<geometry();
+    //     if(debg)qDebug()<<"UNLOCK:"<<index<<type<<isVisible()<<is_poster<<need_hide<<geometry();
     need_hide=false;
     if(!isVisible())show();
     //  }
@@ -219,7 +219,7 @@ void gLabel::unlock(){
         check_timer();
 }
 bool gLabel::chkOffset(){
-    //    qDebug()<<"chk:"<<index<<hcatapult<<offs;
+    //    if(debg)qDebug()<<"chk:"<<index<<hcatapult<<offs;
     if(hcatapult!=0 && offs!=0)
     {
         if(op_sc<.3)
@@ -355,7 +355,7 @@ QRect gLabel::actRect(int i,qreal scale){
     int x=((main_s.width()-w)/2);
     int y=marker_first->y() + i * main_h +(main_h-h)/2;
     QRect at(x,y,w,h);
-    //   qDebug()<<"ACTRECT:"<<at<<"("<<geometry()<<")";
+    //   if(debg)qDebug()<<"ACTRECT:"<<at<<"("<<geometry()<<")";
     return  at;
 }
 
@@ -411,7 +411,7 @@ void gLabel::settle_poster(const QImage& im,bool tp)
     }
     final_poster=tp;
     while (paintingActive()) {
-        qDebug()<<"PAINTING ACTIVE:"<<index;
+        if(debg)qDebug()<<"PAINTING ACTIVE:"<<index;
         QApplication::processEvents();
 
     }
@@ -427,5 +427,5 @@ gLabel::~gLabel(){
     if(fav_on!=nullptr) delete fav_on;
     if(sha_pix!=nullptr)delete sha_pix;
     if(del_pix!=nullptr)delete del_pix;
-    qDebug()<<"BRICK DESTR:"<<index<<type;
+    if(debg)qDebug()<<"BRICK DESTR:"<<index<<type;
 }

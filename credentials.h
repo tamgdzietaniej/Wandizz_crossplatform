@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "sqlapi.h"
 #include "downloaderStd.h"
+#include "permissions.h"
 
 class Credentials : public QObject
 {
@@ -18,10 +19,11 @@ public:
     bool recov;
     int social_type;
     QJsonDocument is_data(QList<QByteArray>);
-    QNetworkAccessManager* manager;
+    QNetworkAccessManager* manager,*upmanager;
     QJsonDocument jfi,jfs,jfm,gt;
     QJsonArray titles;
     QFile* file;
+
     bool update_user_activity(QString);
     void get_titles();
     bool check_signature();
@@ -51,6 +53,7 @@ public:
     bool writeFile(QString,const QByteArray);
     bool create_file(QString,const QByteArray);
     QString lat,lon;
+    bool player_enabled;
     bool offline_m;
     bool recovery;
     int title_items[100],timeline_count_by_title_id[100];
@@ -60,6 +63,8 @@ public:
     void informat(QString);
     int videos_to_unmark;
 private:
+    void get_remote_params();
+    bool debg;
     int check_login(QString);
     QString randHash(int);
     QString logstring;
@@ -69,6 +74,7 @@ private:
     void get_remote_debug();
     int temp_user_no=1;
     QString get_hsh(QString,bool);
+    QNetworkReply* reply;
     QString hsh;
     bool write_hsh();
     QString imgs[1000];
@@ -88,7 +94,7 @@ signals:
     void email_already_registered();
     void inform(QString);
     void current_ver(QString);
- //   void upgrading();
+    //   void upgrading();
     void favs_delete_done();
     void got_user_data();
     void rec_acc_not_found();
@@ -97,7 +103,7 @@ signals:
     void downl_favs();
     void go_get_user_data();
     void got_titles(QJsonArray);
- //   void updater(QString,QString);
+    //   void updater(QString,QString);
     void offline_mode(bool);
     void close_profsettings();
     void add_query(QUrl);
@@ -125,7 +131,7 @@ public slots:
     void add_fav_videos(int);
 
     //    int get_user(QString,QString);
- //   bool check_update();
+    //   bool check_update();
 
 };
 void videos_added();

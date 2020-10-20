@@ -3,7 +3,7 @@
 favItems::favItems( QWidget *parent ) :
     QMainWindow( parent ),
     ui( new Ui::favItems ),
-    debg(true)
+    debg(false)
 {
     ui->setupUi( this );
     setAttribute( Qt::WA_AlwaysStackOnTop, false );
@@ -358,6 +358,7 @@ void favItems::lockBrick(){
     a->deleteLater();
 }
 bool favItems::make_brick( int index, int di, QString up, QString dn, QString imgurl, QString imgfile, QString titlemedia, QString mod_name){
+    if(debg)qDebug()<<"IMGFILE:"<<imgfile;
     bool ft = false;
     if( on  == "videos" ){
         if( vb.count()<=index ){
@@ -405,6 +406,7 @@ bool favItems::make_brick( int index, int di, QString up, QString dn, QString im
     }
     if(gl->db_index!=di || ft){
         gl->set_params( index, di, mrgh,main_h,imgfile, imgurl, up, dn, &marker_first,titlemedia);
+        if(debg)qDebug()<<"IMGFILE@@@@@@@:"<<imgurl;
     }
     if( gl->geometry().bottom()-marker.y()>height() ){
         scfilled = true;
@@ -751,27 +753,31 @@ void favItems::set_fav_videos_list( QJsonDocument doc ){
 }
 void favItems::create_fvideos_list(int cfm,int* cnt3,QJsonArray fav_titles, QJsonArray jfm){
     if(debg)qDebug()<<"SHOW FV"<<cfm;
-        QString posterDir,posterUrl,netfile;
     for(int i=0;i<cfm;i++){
         if(debg)qDebug()<<"CREATING:"<<i;
         int id=fav_titles.at(i).toObject().value(QStringLiteral("id")).toString().toInt();
         QJsonObject obj=jfm.at(i).toObject();
         titles[i] = obj.value("title").toString();
         if(debg)qDebug()<<"FAV_TITLES:"<<i<<id<<titles[i];
-        QStringList imData=getThumbRef( obj.value("filename").toString() );
+        QStringList imData=getThumbRef( obj.value("filename").toString(),titles[i] );
         if(debg)qDebug()<<"Create fav videos list: imData:"<<imData;
         if(!make_brick( i, id, titles[i], QString::number( cnt3[id] )+" items",imData.takeFirst(),imData.takeFirst(),imData.takeFirst(),creating ))return;
         mitems_cnt[i] = cnt3[id];
     }
     set_active();
 }
-QStringList favItems::getThumbRef(QString imPath){
-    if(debg)if(debg)qDebug()<<"getThumbs:"+imPath;
+QStringList favItems::getThumbRef(QString imPath,QString title){
     QFileInfo posterFile=QFileInfo( imPath );
-    QString posterFullPath=posterFile.path()+"/"+f_poster_prefix+posterFile.baseName()+".png";
+    if(debg)qDebug()<<"getThumbsMain:"+imPath<<" postbase:"<<posterFile.baseName()<<title;
+    QString poster_basename=posterFile.baseName();
+    if(poster_basename==""){
+        poster_basename=title.replace(" ","_");
+    }
+    QString posterFullPath=posterFile.path()+"/"+f_poster_prefix+poster_basename+".png";
     posterFullPath=posterFullPath.replace("/media/","/frames/");
     QString posterUrl=serverRoot+posterFullPath;
-    QString posterDir= d_posters+posterFile.baseName()+".png";
+    QString posterDir= d_posters+poster_basename+".png";
+        if(debg)qDebug()<<"POSTER BASENAME url:"<<posterUrl<<","<<posterDir;
     return {posterUrl,posterDir,serverRoot+imPath};
 }
 void favItems::mark_fav( int j ){
@@ -793,7 +799,8 @@ void favItems::create_videos_list(QList<FavsTable> list){
         }
         mitems_cnt[ind] = table.param1.toInt();
         titles[ind] = table.title;
-        QStringList imData=getThumbRef( table.image);
+  if(debg)qDebug()<<"createvideos:"<<table.title;
+        QStringList imData=getThumbRef( table.image, table.title);
         if(debg)qDebug()<<"Create videos list: imData:"<<imData;
         if(!make_brick(table.index,table.db_index, table.title,  lab, imData.takeFirst(),imData.takeFirst(),imData.takeFirst(),creating))return;
         mark_fav( table.index );
@@ -1019,6 +1026,7 @@ void favItems::on_b_options_2_clicked(){
 }
 favItems::~favItems(){
     if(future.isRunning())future.waitForFinished();
+if(debg)qDebug()<<"DELETING FAVS";
     delete ui;
 }
 

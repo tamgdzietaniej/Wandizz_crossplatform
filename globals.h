@@ -67,6 +67,7 @@
 #include "geofit.h"
 #include "socialLogin.h"
 #include "downloaderStd.h"
+#include "permissions.h"
 /* ANDROID */
 #if defined(Q_OS_ANDROID)
 #include <QtAndroid>
@@ -88,6 +89,7 @@ static QString get_wdz_url= serverRoot+"/api/listGen.php?action=wdz&title=";
 static QString dataRoot=serverRoot+"/producers_data/";
 static QString upload_url=serverRoot+"/engine/upload/avatar_upload.php";
 static QString uploaded_url=serverRoot+"/custom/avatars/";
+static QString ftp_avatars="ftp://producer.wandizz.com";
 const static QString coords="&lat=&lon=";
 static QString f_app_hash=hash_dir+"/app_hash.info";
 static QString f_user_nick=hash_dir+"/user_nick.info";
@@ -119,7 +121,7 @@ static QString f_videocut_filename="$fname.$from-$to";
 static bool offline=false;
 static int readers=0;
 static int max_readers=200;
-static int max_active=10;
+static int max_active=4;
 static int pmi;
 static int pms;
 

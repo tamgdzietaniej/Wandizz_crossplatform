@@ -24,6 +24,7 @@ public:
         // Return the formats you will support
         return QList<QVideoFrame::PixelFormat>() << QVideoFrame::Format_RGB565;
     }
+      virtual ~MyVideoSurface();
     bool present(const QVideoFrame &frame);
     void setState(bool);
     bool active;

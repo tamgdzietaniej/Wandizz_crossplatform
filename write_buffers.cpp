@@ -45,10 +45,7 @@ void write_buffers::get_data(QNetworkReply* rep){
                 write_buffers::sent.removeAt(i);
             } else {
                 write_buffers::sent.at(i)->reply=rep->readAll();
-                if(sent.at(i)->reply.left(8).toHex(':')!="89:50:4e:47:0d:0a:1a:0a"){
-                    qDebug()<<"!!!!!!!! FILE FORMAT ERROR:";//<<t->reply.left(8).toHex(':');
-                    write_buffers::sent.removeAt(i);
-                } else  write_buffers::done.append(write_buffers::sent.takeAt(i));
+                write_buffers::done.append(write_buffers::sent.takeAt(i));
                 rep->close();
                 rep->deleteLater();
                 if(!timer->isActive())emit timerstart();
@@ -69,19 +66,22 @@ void write_buffers::process_buffer(){
     }
     get_cnt++;
     Task* t=write_buffers::done.takeFirst();
- //   if(t->reply.left(8).toHex(':')!="89:50:4e:47:0d:0a:1a:0a"){
-   //     qDebug()<<"!!!!!!!! FILE FORMAT ERROR:";//<<t->reply.left(8).toHex(':');
-   //     qDebug()<<t->url;
-   //     qDebug()<<t->reply;
+    if(QFileInfo::exists(t->file.fileName())){
+        qDebug()<<"FILE "<<t->file.fileName()<<"exists!!!!!!!!!!!!!";
 
-  //  } else {
-        if(QFileInfo::exists(t->file.fileName())){
-            qDebug()<<"FILE "<<t->file.fileName()<<"exists!!!!!!!!!!!!!";
-        } else qDebug()<<"write:"<<t->file.fileName();
+    }
+    if(t->reply.left(8).toHex(':')!="89:50:4e:47:0d:0a:1a:0a"){
+        qDebug()<<"!!!!!!!! FILE FORMAT ERROR:"<<t->reply.left(8).toHex(':')<<" - "<<t->file.fileName()<<t->url;
+    } else {
+        QFile* tmpf=new QFile(t->file.fileName()+".lock");
+        tmpf->open(QIODevice::WriteOnly);
+        tmpf->write(QByteArray());
+        tmpf->close();
         t->file.open(QFile::WriteOnly);
         t->file.write(t->reply);
         t->file.close();
- //   }
+        QFile::remove(t->file.fileName()+".lock");
+    }
     delete t;
     get_cnt--;
 }

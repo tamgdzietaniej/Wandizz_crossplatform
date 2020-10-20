@@ -17,7 +17,7 @@ public:
     QTimer* ctimer;
     QString icon[10];
     void set_sliders();
-    void set_params(QString,QString,const int,int);
+    void set_params(QString,QString,const int,int,bool);
     int buffered=0;
     int player_offset;
     int cnt=0;
@@ -42,6 +42,7 @@ public:
     bool exiting=false;
     MainWidget* sceneslider;
     MainWidget* itemslider;
+    void perform_close();
 private:
     Ui::Carousel *ui;
     geofit geo;
@@ -89,7 +90,7 @@ private:
     bool need_stop;
     void setCarouselScenes(bool);
     QPixmap videopix;
-
+    bool player_enabled;
 public slots :
 
  //   void player_state_changed(QMediaPlayer::State);

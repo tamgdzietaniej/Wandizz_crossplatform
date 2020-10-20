@@ -1,6 +1,6 @@
 #include "sqlapi.h"
 
-sqlApi::sqlApi(QObject *parent) : QObject(parent)
+sqlApi::sqlApi(QObject *parent) : QObject(parent),debg(true)
 {
     clear_all();
     manager=new QNetworkAccessManager();
@@ -20,7 +20,7 @@ void sqlApi::selectQuery(QStringList tables, QStringList filters, QStringList co
         set_groupby(format.takeFirst());
     if(!format.empty())
         set_sort(format.takeFirst());
-    qDebug()<<"SELECT BUILDER:"<<get_query();
+    if(debg)qDebug()<<"SELECT BUILDER:"<<get_query();
 }
 void sqlApi::clear_all(){
     method=NONE;
@@ -166,7 +166,7 @@ QJsonArray sqlApi::rarr(QJsonDocument d){
     return d.array();
 }
 QList<int> sqlApi::get_int_arr_by_key(QJsonDocument d,QString key){
-    //  qDebug()<<"GET INT ARR:"<<key<<","<<rarr();
+    //  if(debg)qDebugug()<<"GET INT ARR:"<<key<<","<<rarr();
     QList<int> arr;
     arr.clear();
     for(int i=0;i<rarr(d).count();i++){
@@ -191,7 +191,7 @@ int sqlApi::affected_rows(QJsonDocument d){
     }
 }
 */
-    void sqlApi::set_limit(int l){
+void sqlApi::set_limit(int l){
     if(l>0)limit=QString::number(l);
     else limit="";
 }
@@ -226,15 +226,15 @@ void sqlApi::send_query(bool show_query){
         else delete reply;
     });
     connect(qApp,&QApplication::aboutToQuit,reply,[reply](){reply->abort();});
-      qDebug()<<"QUery downloader ------------------------------------ \n"<<query<<"\n"<<resp<<"\n-------------------";
-    if(show_query){
-        qDebug()<<"QUERY::"<<query;
+    if(debg)if(debg)qDebug()<<"QUERY:"<<query<<"\n"<<" RESPONSE:"<<resp;
+    else if(show_query){
+        if(debg)qDebug()<<"QUERY:"<<query<<"\n"<<" RESPONSE:"<<resp;
     }
 }
 void sqlApi::foo_reply(QNetworkReply *rep){
-    qDebug()<<"SQL:"<<rep->errorString();
+    if(debg)qDebug()<<"SQL:"<<rep->errorString();
 }
 sqlApi::~sqlApi(){
     manager->deleteLater();
-    qDebug()<<"sql destr";
+    if(debg)qDebug()<<"sql destr";
 }

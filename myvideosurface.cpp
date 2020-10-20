@@ -1,5 +1,7 @@
 #include "myvideosurface.h"
 #include <QOpenGLWidget>
+#include <QObject>
+#include <QDebug>
 #include <QVideoSurfaceFormat>
 MyVideoSurface::MyVideoSurface(QObject* parent):QAbstractVideoSurface(parent)
 {
@@ -10,15 +12,14 @@ MyVideoSurface::MyVideoSurface(QObject* parent):QAbstractVideoSurface(parent)
 }
 void MyVideoSurface::setState(bool act){
     active=act;  
-    if(!active)stop();
 }
 bool MyVideoSurface::present(const QVideoFrame &nframe){
-    if(!active)return false;
-    if ( nframe.handleType() == QAbstractVideoBuffer::GLTextureHandle ){
-        if(vimage.size()!=nframe.size()){
-            qDebug()<<"NEW IMAGE";
-            vimage=QImage( nframe.width(), nframe.height(),QImage::Format_ARGB32);
-        }
+    if(!active){
+     qDebug()<<"!active";
+        return false;
+    }
+        if ( nframe.handleType() == QAbstractVideoBuffer::GLTextureHandle ){
+            QImage vimage( nframe.width(), nframe.height(),QImage::Format_ARGB32);
         textureId = static_cast<GLuint>(nframe.handle().toInt() );
         f->glGenFramebuffers( 1, &fbo );
         f->glGetIntegerv( GL_FRAMEBUFFER_BINDING, &prevFbo );
@@ -28,17 +29,21 @@ bool MyVideoSurface::present(const QVideoFrame &nframe){
         f->glBindFramebuffer( GL_FRAMEBUFFER, static_cast<GLuint>( prevFbo ) );
     emit hasImage(vimage,true);
     } else {
-        QVideoFrame frame(nframe);
-        frame.map(QAbstractVideoBuffer::ReadOnly);
+            qDebug()<<"Raster handle";
+        QVideoFrame *frame =new QVideoFrame(nframe);
+        frame->map(QAbstractVideoBuffer::ReadOnly);
         QImage::Format imageFormat = QVideoFrame::imageFormatFromPixelFormat(
-                    frame.pixelFormat());
-        vimage=QImage(frame.bits(),
+                    frame->pixelFormat());
+        vimage=QImage(frame->bits(),
                       nframe.width(),
                       nframe.height(),
                       nframe.bytesPerLine(),
                       imageFormat);
-        frame.unmap();
+        frame->unmap();
         emit hasImage(vimage,false);
     }
     return true;
+}
+MyVideoSurface::~MyVideoSurface(){
+    qDebug()<<"MYVIDEOSURF DESTROY";
 }

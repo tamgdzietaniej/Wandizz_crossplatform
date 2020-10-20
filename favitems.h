@@ -73,7 +73,7 @@ public:
     void removeOffscreen(QString,int);
     void animate(bool);
 private:
-    QStringList getThumbRef(QString);
+    QStringList getThumbRef(QString,QString);
     Ui::favItems *ui;
     bool generator_active;
     bool chk_objectname(QString);

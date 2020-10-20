@@ -40,8 +40,8 @@ void Carousel::set_sliders(){
     connect(sceneslider,SIGNAL(spin_friend(int)),this,SLOT(synchronize_item_to_scene(int)));
     connect(itemslider,SIGNAL(add_fav_click()),this,SLOT(add_fav_item_clicked()));
     connect(sceneslider,SIGNAL(add_fav_click()),this,SLOT(add_fav_scene_clicked()));
-  //  connect(itemslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
-   // connect(sceneslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
+    //  connect(itemslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
+    // connect(sceneslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
 
     connect(this,SIGNAL(can_process()),this,SLOT(roll_scene()),Qt::QueuedConnection);
     ui->shadow_lower_2->move(0,sceneslider->geometry().bottom()+1);
@@ -55,15 +55,17 @@ void Carousel::reinit(){
     trip_to=-1;
     setTitle();
     loading=true;
+
 }
 
-void Carousel::set_params(QString tit,QString nf,const int offs_ms,int pl_offset){
+void Carousel::set_params(QString tit,QString nf,const int offs_ms,int pl_offset,bool pla_en){
     if(debg)qDebug()<<"CAROUSEL: SET PARAMS:"<<pl_offset;
     title=tit;
     setTitle(title);
     paused_time=offs_ms;
     netfile=nf;
     sceneslider->player_offset=pl_offset;
+    sceneslider->shplayer=pla_en;
     sceneslider->init_player(netfile);
     if(paused_time==0){
         sceneslider->slave=true;
@@ -72,7 +74,7 @@ void Carousel::set_params(QString tit,QString nf,const int offs_ms,int pl_offset
         sceneslider->slave=false;
         itemslider->slave=true;
     }
-      reinit();
+    reinit();
 }
 void Carousel::updateMeta(){
     if(debg)if(debg)qDebug()<<"WAND:CAROUSEL:PAUSED:"<<paused_time;
@@ -198,7 +200,7 @@ void Carousel::parser(QNetworkReply* reply){
     emit can_process();
 }
 void Carousel::generate_widget(){
-    future = QtConcurrent::run([=]() {
+ //   future = QtConcurrent::run([=]() {
         for(int wind=0;wind<events_counter;wind++){
             if(exiting){
                 if(debg)qDebug()<<"EXITING FUTURE";
@@ -217,15 +219,22 @@ void Carousel::generate_widget(){
                 }
             }
         }
-    });
+ //  });
 }
 void Carousel::roll_scene(){
     if(first_time){
         first_time=false;
+     //   QApplication::processEvents();
+        update();
+        sceneslider->update();
+        itemslider->update();
+        if(debg)qDebug()<<"start scenesliders timers";
+        sceneslider->get_coords();
+        itemslider->get_coords();
+        roll_to(origin_pos,0);
         sceneslider->timer->start(17);
         itemslider->timer->start(17);
-        if(debg)qDebug()<<"start scenesliders timers";
-        roll_to(origin_pos,0);      
+        ui->b_back->setEnabled(true);
     }
 }
 bool Carousel::roll_to(int rt,int target){
@@ -401,6 +410,10 @@ bool Carousel::is_item_fav(int i=-1){
 void Carousel::showEvent(QShowEvent* e){
     setDisabled(false);
     e->accept();
+}
+void Carousel::perform_close(){
+        sceneslider->perform_close();
+        close();
 }
 Carousel::~Carousel(){
     //   if(debg)qDebug()<<"WAND:CAROUSEL:destruktor CAROUSEL";

@@ -35,7 +35,7 @@ public:
     QPushButton* disabled;
     bool sent=false;
     QString upd_login,upd_pass,upd_nick,upd_phon;
-
+    Permissions* permission;
     void set_recovery_mode();
     bool recovery_mode;
     QString password;
@@ -103,7 +103,6 @@ public slots:
     void wrong_email_message();
     void on_but_pass_clicked();
     void confirmation_sent_info();
-    void file_picked(QString);
 private slots:
     void on_b_add_foto_clicked();
     void on_b_save_clicked();

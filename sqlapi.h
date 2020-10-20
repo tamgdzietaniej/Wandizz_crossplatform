@@ -14,6 +14,7 @@ public:
     QString limit,sq;
     void clear_all();
     void clear_data();
+    bool debg;
     void add_limit(int);
     void set_method(Methods);
     void add_table(QString);

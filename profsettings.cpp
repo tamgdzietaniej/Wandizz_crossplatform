@@ -79,11 +79,13 @@ void profSettings::on_b_save_clicked(){
     complete_fields();
     qDebug()<<must_correct_email<<must_chk_cred<<must_chk_email;
     if(!must_correct_email && !must_chk_email && !must_chk_cred){
-        emit upd_user(upd_login,upd_pass,upd_nick,upd_phon);
         if(avatar_changed){
             qDebug()<<"AVATAR ChaNGED";
-            img.save(f_user_avatar);
+            if(!img.save(f_user_avatar))
+                qDebug()<<"SAVE AVATAR LIPA";
         }
+        qDebug()<<"AVATAR FILE:"<<f_user_avatar<<","<<QFileInfo(f_user_avatar).exists();
+            emit upd_user(upd_login,upd_pass,upd_nick,upd_phon);
         emit go("home");
     } else {
         ui->b_save->setDisabled(false);
@@ -218,7 +220,11 @@ bool profSettings::complete_fields(){
         if(act=="nick")set_nick(ui->edit_name->text());
         if(act=="phon")set_phone(ui->edit_phone->text());
         qDebug()<<"IND:"<<init_nick<<upd_nick<<","<<init_email<<upd_login<<","<<init_phone<<upd_phon<<","<<upd_pass;
-        if(init_nick!=upd_nick || init_email!=upd_login || init_phone!=upd_phon || upd_pass!="" || avatar_changed)ui->ind_modified->show();
+        if(init_nick!=upd_nick || init_email!=upd_login || init_phone!=upd_phon || upd_pass!="" || avatar_changed){
+            qDebug()<<"INIT:"<<init_nick<<upd_nick<<","<<init_email<<upd_login<<","<<init_phone<<upd_phon<<","<<upd_pass<<","<<avatar_changed;
+            ui->ind_modified->show();
+        }
+
         else ui->ind_modified->hide();
     } else {
         edi->setText(prev_text);
@@ -364,18 +370,13 @@ void profSettings::gotAnswer(QString fname){
         qDebug()<<"NO FILE!";
         return;
     }
-    qDebug()<<"PROFSETTINGS:ADD FOTO:"<<fname;
-    qDebug()<<"FNAME:"<<fname;
+    permission=new Permissions(this);
+    permission->requestExternalStoragePermission();
     fname.replace("file://","");
-    qDebug()<<"FNAME:"<<fname<<QFileInfo::exists(fname);
     fimg.load(fname);
     qDebug()<<"loaded pic:"<<fimg.size();
     set_picture();
     ui->b_rotate->show();
-}
-void profSettings::file_picked(QString u){
-    qDebug()<<"PICKED:"<<context->property("u")<<u;
-    QApplication::processEvents();
 }
 void profSettings::set_picture(bool rot){
     ui->ind_modified->show();
