@@ -6,6 +6,7 @@
 #include "math.h"
 #include "stdlib.h"
 #include "myvideosurface.h"
+#include <QtConcurrent/QtConcurrentRun>
 class MainWidget : public QOpenGLWidget
 {
     Q_OBJECT
@@ -121,6 +122,7 @@ public:
     QSize wsize,msize;
     QTimer* timer;
     QString buff_perc;
+    void gen_widget(int);
     struct Widget{
         QImage* image;
         bool is_fav;
@@ -142,7 +144,7 @@ public slots:
     void seek(qint64, bool play=false);
 
 private:
-    QFuture<void> future,m_future;
+    QFuture<void> future;
     QString num(int),netfile;
     void needs_update();
     swipe swipe_dir;

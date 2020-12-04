@@ -21,13 +21,21 @@ public:
     browser* w;
     QString act_url;
     void createWebView();
+    void setAppleLogin();
+    void setFacebookLogin();
 private:
     QString b_close_look,b_again_look;
     //    QStackedLayout* lay;
     Ui::webhelper *ui;
     QQmlEngine* engine;
     QQmlContext* context;
-
+    enum Portal{
+        FACEBOOK,
+        APPLEID,
+        TWITTER,
+        GOOGLE
+    } portal;
+   void show_error(QString);
 public slots:
     void gotAnswer(QString);
     void setUrl(QString);
@@ -36,20 +44,8 @@ signals:
     void needLogin();
     void go(QString);
     void gotSocialData(QString,QString,QString,QString,QString);
+    void gotAppleId(QString);
 
-private slots:
-    void on_b_close_clicked();
-    void on_b_again_clicked();
-
-    void on_container_customContextMenuRequested(const QPoint &pos);
-
-    void on_b_close_pressed();
-
-    void on_b_again_pressed();
-
-    void on_b_again_released();
-
-    void on_b_close_released();
 
 protected:
     void resizeEvent(QResizeEvent* e) override;

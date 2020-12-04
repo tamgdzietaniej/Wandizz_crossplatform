@@ -21,9 +21,9 @@ public:
     bool exiting;
     QTimer* timer;
     QStringList urllist;
+    void clearList();
 private:
     QNetworkAccessManager *manager;
-
     QNetworkRequest* request;
       QTimer* t;
     int pending;

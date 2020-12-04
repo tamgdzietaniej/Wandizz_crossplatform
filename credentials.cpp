@@ -63,7 +63,7 @@ int Credentials::pull_query( QUrl url ){
     request->setAttribute( QNetworkRequest::HttpPipeliningAllowedAttribute  , true );
     request->setUrl( url );
     manager->get( *request );
-    //    if(debg)qDebug()<<"CRED:PULL QUERY:"<<request->url();
+    qDebug()<<"CRED:PULL QUERY:"<<request->url();
     return api_ind++;
 }
 void Credentials::collect_replies( QNetworkReply* reply ){
@@ -105,6 +105,22 @@ void Credentials::get_user_data(){
         }
     }
     emit got_user_data();
+}
+void Credentials::get_user_by_email( QString email ){
+    sql_api.set_method( sqlApi::SELECT);
+    sql_api.add_table("users");
+    sql_api.add_field("*");
+    sql_api.add_equ("name",email);
+    QJsonDocument d = get_json_result();
+    if(set_user(d)){
+        emit got_user_data();
+    }
+    else {
+        qDebug()<<"WRONG EMAIL:"<<email;
+    }
+}
+QJsonDocument Credentials::get_json_result(){
+    return is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
 }
 bool Credentials::update_user_activity( QString activity ){
     sql_api.set_method( sqlApi::INSERT );
@@ -154,6 +170,10 @@ void Credentials::get_user_data( QString login  , QString pass, int social){
     QJsonDocument r = is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
     //    if(debg)qDebug()<< "R:"<< r;
     //   if(debg)qDebug()<< "RE:"<< r.array().isEmpty()<< r.array().count();
+    if(!set_user(r))
+        emit rec_acc_not_found();
+}
+bool Credentials::set_user(QJsonDocument r){
     if( !r.array().isEmpty() ){
         curr_id = geti( r  , "id" );
         curr_user = gets( r  , "name" );
@@ -184,9 +204,14 @@ void Credentials::get_user_data( QString login  , QString pass, int social){
         recov = true;
         if(debg)qDebug()<<"GOT USER DATA";
         emit got_user_data();
-    } else {
-        emit rec_acc_not_found();
-    }
+        return true;
+    } else return false;
+}
+
+QByteArray Credentials::get_jwt(){
+    QByteArray r = is_raw_data( wait_and_get_reply( pull_query( serverRoot+"/api/jwt.php") ) );
+    qDebug()<<"JWT SET:"<<r;
+    return r;
 }
 void Credentials::get_remote_params(){
     //  if(debg)qDebug()<< "GET USER DATA:"<< login<< pass;
@@ -209,6 +234,7 @@ void Credentials::get_remote_params(){
             QString var=json.value("var").toString();
             if(var=="carousel_video_duration")player_offset=val.toInt();
             if(var=="carousel_video")player_enabled=val.toInt();
+            if(var=="carausel_sliders_mutithreading")
             qDebug()<<player_offset<<player_enabled;
         }
     }
@@ -344,6 +370,9 @@ QJsonDocument Credentials::is_data( QList< QByteArray> r ){
     return r1;
 
 }
+QByteArray Credentials::is_raw_data( QList< QByteArray> r ){
+    return r.takeFirst();
+}
 int Credentials::check_login( QString login ){
     sql_api.set_method( sqlApi::SELECT );
     sql_api.add_table( "users" );
@@ -438,13 +467,13 @@ void Credentials::downloadProgress(qint64 p,qint64 tot){
     if(debg)qDebug()<<"DOWNLOADPROGRESS:"<<p<<tot<<perc<<" left";
 }
 bool Credentials::upload_file( QString filename ){
-return false;
+    return false;
     qDebug()<<"Credentials::upload_file("<<filename<<")";
     QFile *upfile=new QFile(filename);
-while(!QFileInfo(*upfile).isReadable()){
-    qDebug()<<"!!!readable";
-    QApplication::processEvents();
-}
+    while(!QFileInfo(*upfile).isReadable()){
+        qDebug()<<"!!!readable";
+        QApplication::processEvents();
+    }
     QString avatar_file=curr_user.toLower();
     avatar_file=avatar_file.replace("@","");
     avatar_file=avatar_file.replace(".","");
@@ -456,8 +485,8 @@ while(!QFileInfo(*upfile).isReadable()){
     qDebug()<<"upfile:"<<upfile;
     upfile->open(QIODevice::ReadOnly);
 
-        // Start upload
-        upmanager->put(QNetworkRequest(url), upfile);
+    // Start upload
+    upmanager->put(QNetworkRequest(url), upfile);
 
 
 
@@ -467,7 +496,7 @@ while(!QFileInfo(*upfile).isReadable()){
     //    connect( upmanager  , SIGNAL( finished( QNetworkReply* ) )  , this  , SLOT( upload_finished( QNetworkReply* ) ));
     //    upfile->open(QIODevice::ReadOnly);
     //    QString bound="margin"; //name of the boundary
- //   QNetworkRequest* request=new QNetworkRequest;
+    //   QNetworkRequest* request=new QNetworkRequest;
 
     //   QString avatar_file=curr_user.toLower();
     //   avatar_file=avatar_file.replace("@","");
@@ -482,12 +511,12 @@ while(!QFileInfo(*upfile).isReadable()){
     //     data.append(upfile->readAll()); //let's read the file
     //       data.append("\r\n");
     //      data.append("--" + bound + "--\r\n"); //closing boundary according to rfc 1867
-//    request->setUrl(QUrl("https://producer.wandizz.com/index.php"));
+    //    request->setUrl(QUrl("https://producer.wandizz.com/index.php"));
     //     request.setRawHeader(QString("Content-Type").toLatin1(),QString("multipart/form-data; boundary=" + bound).toLatin1());
     //     request.setRawHeader(QString("Content-Length").toLatin1(), QString::number(data.length()).toLatin1());
     //    qDebug()<<"-- file opened:"<<data;
-  //  qDebug()<<"REQ:"<<request->url();
-   // upmanager->get(*request);
+    //  qDebug()<<"REQ:"<<request->url();
+    // upmanager->get(*request);
 }
 
 void Credentials::upload_finished( QNetworkReply* reply ){
@@ -539,7 +568,7 @@ void Credentials::get_titles(){
     int titcnt = 0;
     bool replied = false;
     timer->start( 0 );
-    connect( this  , SIGNAL( got_titles( QJsonArray ) )  , timer  , SLOT( deleteLater() ) );
+ //   connect( this  , SIGNAL( got_titles( QJsonArray ) )  , timer  , SLOT( deleteLater() ) );
     connect( this  , SIGNAL( got_titles( QJsonArray ) )  , timer  , SLOT( stop() ) );
     connect( timer  , &QTimer::timeout  , [ = , &titcnt  , &replied](){
         QList< QByteArray> reply = get_reply( resid );
@@ -549,8 +578,8 @@ void Credentials::get_titles(){
             res = reply.takeFirst();
             res.replace( "\\"  , "" );
             if(debg)qDebug()<<"TITLES JSON:"<<reply<<"???????"<<res<<"???????"<<QJsonDocument::fromJson(res);
-            titles = QJsonDocument::fromJson( res ).array();
-            titcnt = titles.count();
+            titles = new QJsonArray(QJsonDocument::fromJson( res ).array());
+            titcnt = titles->count();
             //    sql_api.selectQuery({"timeline"},{"title_id","COUNT( * )AS count"},{"title_id"});
             sql_api.clear_all();
             sql_api.set_method( sqlApi::SELECT );
@@ -570,10 +599,13 @@ void Credentials::get_titles(){
                 gt = QJsonDocument::fromBinaryData( gtb );
             }
             int tcnt = gt.array().count();
+            qDebug()<<"TTTIT:"<<*titles<<titcnt;
             for( int i = 0;i< titcnt;i++ ){
-                int title_id = titles.at( i ).toObject().value( "id" ).toInt();
-                title_media[i] = titles.at( i ).toObject().value( "filename" ).toString();
-                title_oid[i] = titles.at( i ).toObject().value( "oid" ).toInt();
+                QByteArray titati=titles->at( i ).toObject().value( "filename" ).toString().toLatin1();
+                                qDebug()<<"TITLE!!!!:"<<titles->count()<<i<<titles->at(i)<<titati;
+                int title_id = titles->at( i ).toObject().value( "id" ).toInt();
+                title_media[i] = new QByteArray(titles->at( i ).toObject().value( "filename" ).toString().toLatin1());
+                title_oid[i] = titles->at( i ).toObject().value( "oid" ).toInt();
                 int cnt = 0;
                 for( int j = 0;j< tcnt;j++ ){
                     if( title_id == gt.array().at( j ).toObject().value( "title_id" ).toString().toInt() ){
@@ -585,7 +617,7 @@ void Credentials::get_titles(){
                     }
                 }
             }
-            emit got_titles( titles );
+            emit got_titles( *titles );
             if(debg)qDebug()<<"TITLES:"<<titles;
         }
     } );

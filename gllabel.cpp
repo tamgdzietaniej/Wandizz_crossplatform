@@ -9,7 +9,7 @@ gLabel::gLabel(QWidget* parent,QString o):QOpenGLWidget(parent),
     need_update(false),
     to_hide(false),
     stim(200),
-    debg(false)
+    debg(false),fresh_run(true)
 {
     mainh=main_h-(main_h/2-ms/2);
     setStyleSheet("border:none;");
@@ -40,6 +40,7 @@ gLabel::gLabel(QWidget* parent,QString o):QOpenGLWidget(parent),
     lpix->setScaledContents(false);
     lpix->setStyleSheet("background:transparent;border:none;");
     set_style();
+    qDebug()<<"NEW GLABEL:"<<type;
 }
 void gLabel::initializeGL(){
     glClearColor(0,0,0,0);
@@ -164,7 +165,7 @@ void gLabel::set_params(int i, int db_ind,qreal mrg,int mh,QString fn,QString ur
     item ="";
     loaded=false;
     netfile=nf;
-    //  main_s=qApp->primaryScreen()->availableVirtualSize();
+      //  main_s=qApp->primaryScreen()->availableVirtualSize();
     main_s=size();
     ms=(main_h/3)*2;
     txt_text=up;
@@ -183,6 +184,13 @@ void gLabel::set_params(int i, int db_ind,qreal mrg,int mh,QString fn,QString ur
     where_to_share_list.clear();
     if(type=="videos"){
         tim_align=Qt::AlignRight;
+        if(fresh_run){
+            QFile::remove(fn);
+              qDebug()<<"DELETING!!!";
+              fresh_run=false;
+              sent1=false;
+              sent2=false;
+        }
     } else {
         tim_align=Qt::AlignCenter;
     }

@@ -2,6 +2,7 @@
 
 void navigation::set_titles(QJsonArray t){
     titles=t;
+    get_favs(true);
     fav_titles=credentials->jfm.array();
     titles_cnt=titles.count();
     gone_to="";
@@ -172,9 +173,9 @@ bool navigation::unlock(){
     bool test=lock;
     lock=false;
     if(count()>0){
-            if(debg)qDebug()<<"Unlock:"<<currentWidget();
+        if(debg)qDebug()<<"Unlock:"<<currentWidget();
         if(!currentWidget()->isEnabled())
-        currentWidget()->setEnabled(true);
+            currentWidget()->setEnabled(true);
     }
     return test;
 }
@@ -198,6 +199,7 @@ void navigation::go_to(QString to,QStringList params){
     if(debg)qDebug()<<"GOTO:"<<to;
     if(to=="loginFB"){
         proceed_webview();
+        webview->setFacebookLogin();
         show_module(webview);
         webview->setUrl(loginFBurl+"?action="+params.takeFirst());
         return;
@@ -208,6 +210,18 @@ void navigation::go_to(QString to,QStringList params){
         webview->setUrl(loginTWurl+"?action="+params.takeFirst());
         return;
     }
+    else if(to=="loginGoogle"){
+
+    }
+    else if(to=="loginApple"){
+        QByteArray secret(credentials->get_jwt());
+        QString url=loginAPurl+"?response_type=code&client_id=com.wandizz.producer&scope=email%20name&response_mode=form_post&usePopup=false&redirect_uri=https://producer.wandizz.com/authorize/apple/check.php";
+        proceed_webview();
+        webview->setAppleLogin();
+        show_module(webview);
+        webview->setUrl(url);
+        return;
+    }
 
     if(mmenu->isVisible()){
         if(debg)qDebug()<<"HIDING MENU"<<sender()<<to;
@@ -216,7 +230,7 @@ void navigation::go_to(QString to,QStringList params){
             return;
     }
     if(count()>0)
-    if(sender()==mmenu)currentWidget()->setEnabled(true);
+        if(sender()==mmenu)currentWidget()->setEnabled(true);
     if(to.contains("back")){
         if(count()>1){
             QPointer<QWidget> dw=currentWidget();
@@ -238,6 +252,10 @@ void navigation::go_to(QString to,QStringList params){
             unlock();
             if(currentWidget()==videos){
                 to=videos->on;
+            }
+            if(count()>0){
+                currentWidget()->raise();
+                currentWidget()->showFullScreen();
             }
         }
     }
@@ -303,7 +321,7 @@ void navigation::go_to(QString to,QStringList params){
         if(to=="carousel"){
             shadow=true;
             proceed_carousel(params);
-            show_module(carousel);
+           // show_module(carousel);
         } else
             if(to=="fav_scenes"){
                 if(cfs>0 || show_even_if_zero){
@@ -365,6 +383,10 @@ void navigation::show_module(QWidget* to){
     }
     unlock();
 }
+void navigation::show_carousel(){
+    carousel->roll_scene();
+    show_module(carousel);
+}
 void navigation::proceed_sync(){
     if(sync==nullptr){
         sync=new SyncScreen();
@@ -391,6 +413,7 @@ void navigation::proceed_webview(){
     webview->createWebView();
     connect(webview,SIGNAL(go(QString)),this,SLOT(go_to(QString)));
     connect(webview,SIGNAL(gotSocialData(QString,QString,QString,QString,QString)),this,SLOT(setSocialData(QString,QString,QString,QString,QString)));
+    connect(webview,SIGNAL( gotAppleId(QString)),credentials,SLOT(get_user_by_email(QString)));
 }
 void navigation::setSocialData(QString fname,QString lname,QString gender,QString email,QString token){
     if(curr_user!=email){
@@ -409,13 +432,15 @@ void navigation::proceed_carousel(QStringList params)
 {// title, QString time, QString});){
     if(carousel!=nullptr)
     {
-        carousel->deleteLater();
+        carousel->close();
     }
     title=params.takeFirst();
     stime=params.takeFirst();
     netfile=params.takeFirst();
     QString f_oid=params.takeFirst();
     carousel=new Carousel();
+    carousel->hide();
+    update();
     connect(carousel,SIGNAL(download(QString,QString)),media_queue,SLOT(push_url(QString,QString)),Qt::QueuedConnection);
     carousel->setObjectName("carousel");
     geom->resizer(carousel);
@@ -432,7 +457,12 @@ void navigation::proceed_carousel(QStringList params)
     connect(carousel,SIGNAL(add_fav_scene(int,QString,QString,QString,int)),credentials,SLOT(add_fav_scene(int,QString,QString,QString,int)),Qt::QueuedConnection);
     connect(carousel,SIGNAL(delete_item(int,QString)),this,SLOT(delete_item(int,QString)),Qt::QueuedConnection);
     connect(carousel,SIGNAL(show_menu(QPoint)),this,SLOT(show_menu(QPoint)));
+    connect(carousel,SIGNAL(can_process()),this,SLOT(show_carousel()));
+    connect(carousel,SIGNAL(cant_process()),this,SLOT(rollin_carousel()));
     carousel->aimParser();
+}
+void navigation::rollin_carousel(){
+    carousel->close();
 }
 void navigation::get_favs(bool write){
     credentials->get_favs(write);
@@ -446,6 +476,7 @@ bool navigation::proceed_media(QString on,QStringList srch){
     }
     else
     {
+        media_queue->clearList();
         videos=new favItems();
         connect(videos,SIGNAL(download(QString,QString)),media_queue,SLOT(push_url(QString,QString)),Qt::QueuedConnection);
         connect(videos,SIGNAL(go(QString, QStringList)),this,SLOT(go_to(QString,QStringList)));
@@ -631,7 +662,7 @@ void navigation::change_geo(const QRect& r){
     setFixedSize(r.size());
     update();
 }
-navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),menuopened(false){
+navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),menuopened(false),fresh_run(true){
     /*
     if(debg)qDebug()<<"WINDOW SIZE:"<<geometry();
     //  showFullScreen();
@@ -720,6 +751,10 @@ navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),me
     //  waiter->move(0,0);
     //  waiter->setFixedSize(size());
     //   waiter->setPixmap(*waiter_anim);
+#if defined (Q_OS_ANDROID)
+    uperm=new userPermissions(this);
+    uperm->requestPermission();
+#endif
     go_to("sign_in");
     init_app();
     set_credentials();

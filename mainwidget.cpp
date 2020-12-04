@@ -195,10 +195,10 @@ void MainWidget::initializeGL(){
 void MainWidget::paintGL(){
     if(!unblocking_facer){
         unblocking_facer=true;
-        QTimer::singleShot(150,this,[=](){
-            setting_face=false;
-            unblocking_facer=false;
-        });
+        //     QTimer::singleShot(150,this,[=](){
+        setting_face=false;
+        unblocking_facer=false;
+        //  });
     } else if(setting_face)if(debg)qDebug()<<"FACER BLOCKED";
     if(items==0)return;
     QPainter painter(this);
@@ -500,27 +500,38 @@ void MainWidget::get_coords(){
         else if(widget[processing].loaded<2)
             genw=processing;
         if(genw>-1){
-            if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
-            if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
-                widget[genw].loaded=2;
-            //    QImageReader imr(filename[genw]);
-             //           imr.setQuality(100);
-              //          imr.setBackgroundColor(QColor(255,255,255,255));
-               //         if(imr.canRead() && !imr.error())
-                 //        widget[genw].image=new QImage(imr.read().scaled(msize,aspect,Qt::SmoothTransformation));
-                 //       else qDebug()<<"ERROR READER:"<<filename[genw]<<imr.error()<<imr.errorString();;
-             QImage tmpimage(filename[genw]);
-             widget[genw].image=new QImage(tmpimage.scaled(msize,aspect,Qt::SmoothTransformation));
-                widget[genw].image->setDevicePixelRatio(dpi);
-                if(pdodebug)if(debg)qDebug()<<"Loaded image:"<<widget[genw].image->size()<<widget[genw].image->sizeInBytes()<<filename[genw]<<","<<genw;
-                needs_update();
-            }  else {
-                setting_face=false;
-            }
+         //   if(future.isFinished()){
+             //   qDebug()<<"!!!!! FUT";
+       //    QtConcurrent::run(this,&MainWidget::gen_widget,genw).waitForFinished();
+           // } else {
+           //     processing--;
+           //     qDebug()<<"Future:"<<future.isRunning();
+          //  }
+           gen_widget(genw);
         } else setting_face=false;
     }
 }
+void MainWidget::gen_widget(int genw){
+    if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
+    if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
+        widget[genw].loaded=2;
+        //    QImageReader imr(filename[genw]);
+        //           imr.setQuality(100);
+        //          imr.setBackgroundColor(QColor(255,255,255,255));
+        //         if(imr.canRead() && !imr.error())
+        //        widget[genw].image=new QImage(imr.read().scaled(msize,aspect,Qt::SmoothTransformation));
+        //       else qDebug()<<"ERROR READER:"<<filename[genw]<<imr.error()<<imr.errorString();;
+        QImage tmpimage(filename[genw]);
+        widget[genw].image=new QImage(tmpimage.scaled(msize,aspect,Qt::SmoothTransformation));
+        widget[genw].image->setDevicePixelRatio(dpi);
+        if(pdodebug)if(debg)qDebug()<<"Loaded image:"<<widget[genw].image->size()<<widget[genw].image->sizeInBytes()<<filename[genw]<<","<<genw;
+        needs_update();
+    }  else {
+        setting_face=false;
+    }
+}
 MainWidget::~MainWidget(){
+    future.waitForFinished();
     if(debg)qDebug()<<"WAND:MAINWIDGET:DESTRuctor mainwidget";
     if(is_playing())player->stop();
 }
@@ -689,7 +700,7 @@ bool MainWidget::perform_close(){
     while(player->state()!=QMediaPlayer::StoppedState){
         player->stop();
         if(debg)qDebug()<<"Stopping player";
-      //  QApplication::processEvents();
+        //  QApplication::processEvents();
     }
     while(video->isActive()){
         video->stop();

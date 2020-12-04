@@ -15,7 +15,7 @@
 #include "downloaderStd.h"
 #include "socialLogin.h"
 #include "myvideosurface.h"
-
+#include "userPermissions.h"
 class navigation:public QStackedWidget{
     Q_OBJECT
 public:
@@ -23,6 +23,7 @@ public:
     ~navigation();
 
     double opac;
+    userPermissions* uperm;
     QString gone_to;
     QPixmap*vpix;
     QPixmap bimg;
@@ -44,7 +45,7 @@ public:
     void set_user();
     QFuture<void> future;
     QRect shadow_geo;
-    bool splash;
+    bool splash,fresh_run;
     QWidget* parm;
     bool navlock();
     bool unlock();
@@ -117,6 +118,7 @@ public slots:
 
 private slots:
     void setSocialData(QString,QString,QString,QString,QString);
+    void rollin_carousel();
     void terminateCreds();
     void show_rest();
     void get_favs(bool);
@@ -135,7 +137,9 @@ private slots:
     void navigate_upon_user_data();
     void recovery_user();
     void activate_current(int);
+    void show_carousel();
     void exit_app();
+
 private:
     downloader* media_queue;
     void show_profsettings();

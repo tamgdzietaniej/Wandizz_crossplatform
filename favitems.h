@@ -37,7 +37,7 @@ public:
     QString creating;
     void mark_fav(int);
     int bricks_shown;
-    bool cleanAnimPrepared;
+    bool cleanAnimPrepared,fresh_run;
     QSequentialAnimationGroup* cleanGroup;
     QSequentialAnimationGroup* ag;
     bool show_videos(int,int,int,QString,QString);

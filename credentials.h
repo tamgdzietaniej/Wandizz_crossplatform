@@ -19,9 +19,12 @@ public:
     bool recov;
     int social_type;
     QJsonDocument is_data(QList<QByteArray>);
+    QByteArray is_raw_data(QList<QByteArray>);
+    QJsonDocument get_json_result();
+    bool set_user(QJsonDocument);
     QNetworkAccessManager* manager,*upmanager;
     QJsonDocument jfi,jfs,jfm,gt;
-    QJsonArray titles;
+    QJsonArray* titles;
     QFile* file;
 
     bool update_user_activity(QString);
@@ -58,10 +61,11 @@ public:
     bool recovery;
     int title_items[100],timeline_count_by_title_id[100];
     int player_offset;
-    QString title_media[100];
+    QByteArray *title_media[100];
     int title_oid[100];
     void informat(QString);
     int videos_to_unmark;
+    QByteArray get_jwt();
 private:
     void get_remote_params();
     bool debg;
@@ -129,7 +133,7 @@ public slots:
     void add_fav_item(int,QString,QString,QString,QString,int);
     void add_fav_scene(int,QString,QString,QString,int);
     void add_fav_videos(int);
-
+    void get_user_by_email(QString email);
     //    int get_user(QString,QString);
     //   bool check_update();
 

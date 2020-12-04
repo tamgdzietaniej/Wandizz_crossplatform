@@ -3,7 +3,7 @@ import QtQuick.LocalStorage 2.12
 import QtWebView 1.1
 Item {
     id: web
-   x:0
+    x:0
     y:0
     width: w
     height: h
@@ -13,20 +13,25 @@ Item {
         function getSource(){
             var js = "document.documentElement.getElementsByTagName('json')[0].innerHTML";
             webView.runJavaScript(js, function(result){
-                    console.log("RESULT="+result)
+                console.log("RESULT="+result)
+                if(result === undefined){
+                    web.visible = true
+                    webView.visible=true
+                } else {
+                    web.visible = false;
+                    webView.visible=false;
                     web.completed(result)
-                if(result===undefined)
-                web.visible=true
-                webView.visible=true
+                }
+
             });
         }
         id: webView
         visible:false;
         x:0
         y:0
-       width: web.width
-       height: web.height
-          anchors.fill: parent;
+        width: web.width
+        height: web.height
+        anchors.fill: parent;
         url: ref
         clip: false
         antialiasing: true

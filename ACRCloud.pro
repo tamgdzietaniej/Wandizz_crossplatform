@@ -37,6 +37,7 @@ SOURCES += main.cpp \
     localization.cpp \
     geofit.cpp \
     profsettings.cpp \
+    userPermissions.cpp \
     userprof.cpp \
     widget_mapper.cpp \
     widget_wrapper.cpp \
@@ -70,6 +71,7 @@ audiolevel.h \
     socialLogin.h \
     sqlapi.h \
     syncscreen.h \
+    userPermissions.h \
     userprof.h \
     widget_mapper.h \
     widget_wrapper.h \
@@ -115,33 +117,25 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 android{
-include($$PWD/vendor/vendor.pri)01
+include($$PWD/vendor/vendor.pri)
     QT += androidextras
     HEADERS += share_cross.h
     SOURCES += share_cross.cpp
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-    android: include(android/ssl/openssl.pri)
+    include(android/ssl/openssl.pri)
     VERSION = 1.2.6
-    ANDROID_VERSION_CODE = '21'
-    ANDROID_VERSION_NAME = 'WANDIZZ_test'
+    ANDROID_VERSION_CODE = '16'
+    ANDROID_VERSION_NAME = 'WANDIZZ beta'
     ANDROID_MIN_SDK_VERSION = '15'
-    ANDROID_TARGET_SDK_VERSION = '28'
+    ANDROID_TARGET_SDK_VERSION = '26'
 
-DISTFILES += \
-    android/src/wandizz/shares.java \
-    android/src/wandizz/shares/shares.java
     RESOURCES += \
         images.qrc \
         qml.qrc
 
 
-DISTFILES += \
 ANDROID_ABIS = armeabi-v7a arm64-v8a
 SUPPORTED_ABIS = armeabi-v7a arm64-v8a
-
-
-ANDROID_ABIS = armeabi-v7a arm64-v8a
-
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
 DISTFILES += \
@@ -151,13 +145,11 @@ DISTFILES += \
     android/gradle/wrapper/gradle-wrapper.properties \
     android/gradlew \
     android/gradlew.bat \
-    android/res/values/libs.xml
-
-}
-
-DISTFILES += \
+    android/res/values/libs.xml \
     android/src/org/bytran/bytran/RequestPermissions.java \
-    vendor/vendor.pri
+    vendor/vendor.pri \
+    android/src/wandizz/shares.java \
+    android/src/wandizz/shares/shares.java
 
-ANDROID_ABIS = armeabi-v7a arm64-v8a
-
+ANDROID_ABIS = armeabi-v7a
+}

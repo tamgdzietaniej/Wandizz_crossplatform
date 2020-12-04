@@ -5,7 +5,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>WANDIZZ</string>
 	<key>CFBundleExecutable</key>
-	<string>WANDIZZ</string>
+	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Created by Qt/QMake</string>
 	<key>CFBundleIconName</key>
@@ -19,17 +19,17 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.3</string>
+	<string>8.3</string>
 	<key>CFBundleSignature</key>
 	<string>${QMAKE_PKGINFO_TYPEINFO}</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>5.0</string>
 	<key>DefaultDeploymentTarget</key>
 	<string>13.2</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>MinimumOSVersion</key>
-	<string>10.0</string>
+	<string>12.0</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>
@@ -48,13 +48,11 @@
 	<key>NSCameraUsageDescription</key>
 	<string>To take photo</string>
 	<key>NSHighResolutionCapable</key>
-	<string>false</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>USING FOR STATS</string>
+	<string>YES</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>USING FOR STATS</string>
+	<string>Depending of Your location app will offer relevant shopping opportunities.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>USING FOR MEDIA RECOGNIZE</string>
+	<string>Our app allows for video recognition - based on audio - that is why app needs access to Your microphone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>To pick up avatar picture</string>
 	<key>UILaunchImageFile</key>

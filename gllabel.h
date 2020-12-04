@@ -25,6 +25,7 @@ public:
     void show_shares();
     QString on;
     qreal rcol=0;
+    bool fresh_run;
     QPixmap* favpix;
     QRect actRect(int i=-1,qreal scale=1.0);
     void set_style();

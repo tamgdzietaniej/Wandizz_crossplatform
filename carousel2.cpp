@@ -43,7 +43,6 @@ void Carousel::set_sliders(){
     //  connect(itemslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
     // connect(sceneslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
 
-    connect(this,SIGNAL(can_process()),this,SLOT(roll_scene()),Qt::QueuedConnection);
     ui->shadow_lower_2->move(0,sceneslider->geometry().bottom()+1);
     ui->shadow_lower_3->move(0,itemslider->geometry().bottom()+1);
 }
@@ -142,6 +141,10 @@ void Carousel::parser(QNetworkReply* reply){
         plines.removeLast();
         duration=plines.takeLast().toInt();
         int all=plines.count()*2;
+        if(all==0){
+            qDebug()<<"NO ITEMS";
+            emit cant_process();
+        }
         QTime _tmp_t(0,0,0);
         ui->end_lab->setText(ms2hms(duration));
         setTitle(title);
@@ -200,31 +203,31 @@ void Carousel::parser(QNetworkReply* reply){
     emit can_process();
 }
 void Carousel::generate_widget(){
- //   future = QtConcurrent::run([=]() {
-        for(int wind=0;wind<events_counter;wind++){
-            if(exiting){
-                if(debg)qDebug()<<"EXITING FUTURE";
-                break;
-            }
-            if(!srequested.contains(ev_data[wind].scene_id)){
-                if(!QFileInfo::exists(ev_data[wind].frame_file)){
-                    srequested.append(ev_data[wind].scene_id);
-                    emit download(ev_data[wind].frame,ev_data[wind].frame_file);
-                }
-            }
-            if(!irequested.contains(ev_data[wind].item_id)){
-                if(!QFileInfo::exists(ev_data[wind].item_file)){
-                    irequested.append(ev_data[wind].item_id);
-                    emit download(ev_data[wind].image,ev_data[wind].item_file);
-                }
+    //   future = QtConcurrent::run([=]() {
+    for(int wind=0;wind<events_counter;wind++){
+        if(exiting){
+            if(debg)qDebug()<<"EXITING FUTURE";
+            break;
+        }
+        if(!srequested.contains(ev_data[wind].scene_id)){
+            if(!QFileInfo::exists(ev_data[wind].frame_file)){
+                srequested.append(ev_data[wind].scene_id);
+                emit download(ev_data[wind].frame,ev_data[wind].frame_file);
             }
         }
- //  });
+        if(!irequested.contains(ev_data[wind].item_id)){
+            if(!QFileInfo::exists(ev_data[wind].item_file)){
+                irequested.append(ev_data[wind].item_id);
+                emit download(ev_data[wind].image,ev_data[wind].item_file);
+            }
+        }
+    }
+    //  });
 }
 void Carousel::roll_scene(){
     if(first_time){
         first_time=false;
-     //   QApplication::processEvents();
+        //   QApplication::processEvents();
         update();
         sceneslider->update();
         itemslider->update();
@@ -412,8 +415,8 @@ void Carousel::showEvent(QShowEvent* e){
     e->accept();
 }
 void Carousel::perform_close(){
-        sceneslider->perform_close();
-        close();
+    sceneslider->perform_close();
+    close();
 }
 Carousel::~Carousel(){
     //   if(debg)qDebug()<<"WAND:CAROUSEL:destruktor CAROUSEL";

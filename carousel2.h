@@ -92,7 +92,7 @@ private:
     QPixmap videopix;
     bool player_enabled;
 public slots :
-
+    void roll_scene();
  //   void player_state_changed(QMediaPlayer::State);
   //  void media_buffer_filled_info(int);
  //   void media_info(QMediaPlayer::MediaStatus);
@@ -106,7 +106,6 @@ private slots:
     void add_fav_scene_clicked();
     void add_fav_item_clicked();
     void generate_widget();
-    void roll_scene();
     void updateMeta();
     void synchronize_scene_to_item(int);
     void synchronize_item_to_scene(int);
@@ -158,5 +157,6 @@ signals:
     void got_data();
     void download(QString,QString);
     void can_process();
+    void cant_process();
 };
 #endif // CAROUSEL_H

@@ -419,27 +419,27 @@ border:none;</string>
    <widget class="QFrame" name="anframe">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>15</x>
       <y>440</y>
-      <width>380</width>
+      <width>370</width>
       <height>290</height>
      </rect>
     </property>
     <property name="sizePolicy">
-     <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+     <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
       <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
     </property>
     <property name="minimumSize">
      <size>
-      <width>380</width>
+      <width>370</width>
       <height>0</height>
      </size>
     </property>
     <property name="maximumSize">
      <size>
-      <width>15000</width>
+      <width>370</width>
       <height>15000</height>
      </size>
     </property>
@@ -479,7 +479,7 @@ color:white;
       <enum>QLayout::SetMinAndMaxSize</enum>
      </property>
      <property name="leftMargin">
-      <number>10</number>
+      <number>0</number>
      </property>
      <property name="topMargin">
       <number>5</number>
@@ -493,7 +493,7 @@ color:white;
      <item>
       <widget class="QPushButton" name="b_twitter">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -522,11 +522,8 @@ color:white;
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
-       <property name="styleSheet">
-        <string notr="true">margin:2px;</string>
-       </property>
        <property name="text">
-        <string>Login with Twitter</string>
+        <string/>
        </property>
        <property name="iconSize">
         <size>
@@ -555,7 +552,7 @@ color:white;
        </property>
        <property name="maximumSize">
         <size>
-         <width>380</width>
+         <width>370</width>
          <height>47</height>
         </size>
        </property>
@@ -567,9 +564,6 @@ color:white;
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">margin:2px;</string>
        </property>
        <property name="text">
         <string>Login with Facebook</string>
@@ -621,9 +615,6 @@ color:white;
        <property name="autoFillBackground">
         <bool>false</bool>
        </property>
-       <property name="styleSheet">
-        <string notr="true">margin:2px;</string>
-       </property>
        <property name="text">
         <string>Create account</string>
        </property>
@@ -648,7 +639,7 @@ color:white;
        </property>
        <property name="maximumSize">
         <size>
-         <width>3600</width>
+         <width>370</width>
          <height>47</height>
         </size>
        </property>
@@ -666,9 +657,6 @@ color:white;
        </property>
        <property name="autoFillBackground">
         <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">margin:2px;</string>
        </property>
        <property name="text">
         <string>Guest login</string>
@@ -694,7 +682,7 @@ color:white;
        </property>
        <property name="maximumSize">
         <size>
-         <width>4000</width>
+         <width>370</width>
          <height>24</height>
         </size>
        </property>
@@ -741,105 +729,6 @@ color:white;
      </rect>
     </property>
    </widget>
-   <widget class="QLabel" name="logo_facebook">
-    <property name="geometry">
-     <rect>
-      <x>58</x>
-      <y>493</y>
-      <width>45</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="maximumSize">
-     <size>
-      <width>500</width>
-      <height>500</height>
-     </size>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="images.qrc">:/gui/APP ICONS/social-facebook2.png</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>true</bool>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="logo_twitter">
-    <property name="geometry">
-     <rect>
-      <x>63</x>
-      <y>445</y>
-      <width>35</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="maximumSize">
-     <size>
-      <width>500</width>
-      <height>500</height>
-     </size>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="images.qrc">:/gui/APP ICONS/social-twitter_v.png</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>true</bool>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="logo_google">
-    <property name="geometry">
-     <rect>
-      <x>60</x>
-      <y>543</y>
-      <width>41</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="maximumSize">
-     <size>
-      <width>400</width>
-      <height>300</height>
-     </size>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap resource="images.qrc">:/gui/APP ICONS/social-google.png</pixmap>
-    </property>
-    <property name="scaledContents">
-     <bool>true</bool>
-    </property>
-   </widget>
    <widget class="QWidget" name="shadow" native="true">
     <property name="geometry">
      <rect>
@@ -875,15 +764,12 @@ color:white;
     </property>
    </widget>
    <zorder>openGLWidget</zorder>
-   <zorder>logo_facebook</zorder>
-   <zorder>logo_google</zorder>
    <zorder>version</zorder>
    <zorder>frame</zorder>
    <zorder>anframe</zorder>
    <zorder>logo_mid</zorder>
    <zorder>shadow</zorder>
    <zorder>verlabel</zorder>
-   <zorder>logo_twitter</zorder>
   </widget>
  </widget>
  <resources>

@@ -18,7 +18,9 @@ downloader::downloader(QObject *parent) : QObject(parent)
     writer->clear();
     dact=false;
 }
-
+void downloader::clearList(){
+    urllist.clear();
+}
 void downloader::push_url(QString url,QString fn){
     qDebug()<<"DN:"<<url;
     if(!QUrl(url).isValid()){

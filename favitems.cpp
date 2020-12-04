@@ -3,7 +3,8 @@
 favItems::favItems( QWidget *parent ) :
     QMainWindow( parent ),
     ui( new Ui::favItems ),
-    debg(false)
+    debg(false),
+    fresh_run(true)
 {
     ui->setupUi( this );
     setAttribute( Qt::WA_AlwaysStackOnTop, false );
@@ -368,7 +369,7 @@ bool favItems::make_brick( int index, int di, QString up, QString dn, QString im
     } else
         if( on  == "fav_items" ){
         if( fib.count()<=index ){
-            fib.append(new gLabel( glcontainer, on ));
+            fib.append(new gLabel( glcontainer ));
             ft = true;
         }
     } else
