@@ -23,7 +23,7 @@
 	<key>CFBundleSignature</key>
 	<string>${QMAKE_PKGINFO_TYPEINFO}</string>
 	<key>CFBundleVersion</key>
-	<string>5.0</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>DefaultDeploymentTarget</key>
 	<string>13.2</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -48,11 +48,11 @@
 	<key>NSCameraUsageDescription</key>
 	<string>To take photo</string>
 	<key>NSHighResolutionCapable</key>
-	<string>YES</string>
+	<string>false</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Depending of Your location app will offer relevant shopping opportunities.</string>
+        <string>Depending of Your location app will offer relevant shopping opportunities.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Our app allows for video recognition - based on audio - that is why app needs access to Your microphone.</string>
+        <string>Our app allows for video recognition - based on audio - that is why app needs access to Your microphone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>To pick up avatar picture</string>
 	<key>UILaunchImageFile</key>
