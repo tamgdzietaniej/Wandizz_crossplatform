@@ -5,12 +5,14 @@ Credentials::Credentials( QObject *parent ): QObject( parent )  ,
     offline_m( false )  ,
     recovery( false )  ,
     hsh( "" )  ,
-    api_ind( 1 )  , recov( false ), social_type(0), debg(false)
+    api_ind( 1 )  , recov( false ), social_type(0), debg(false),
+    context_unlocked(false),context_id(-1)
 {
     make_dir( hash_dir );
     make_dir( d_carousel );
     make_dir( d_recorder );
     make_dir( d_posters );
+    make_dir( d_logos );
     sql_api.setParent(0);
 }
 void Credentials::make_dir( QString dir ){
@@ -38,12 +40,12 @@ void Credentials::process(){
     curr_user = "";
     curr_nick = "";
     curr_phone = "";
-    jfi = QJsonDocument();
-    jfs = QJsonDocument();
-    jfm = QJsonDocument();
-    get_titles();
+    jfi = QJsonArray();
+    jfs = QJsonArray();
+    jfv = QJsonArray();
     get_remote_params();
-    emit go_get_user_data();
+    prepare_titles();
+    get_user_data();
 }
 int Credentials::make_request( QString ident ){
     QNetworkRequest* request=new QNetworkRequest;
@@ -63,7 +65,6 @@ int Credentials::pull_query( QUrl url ){
     request->setAttribute( QNetworkRequest::HttpPipeliningAllowedAttribute  , true );
     request->setUrl( url );
     manager->get( *request );
-    qDebug()<<"CRED:PULL QUERY:"<<request->url();
     return api_ind++;
 }
 void Credentials::collect_replies( QNetworkReply* reply ){
@@ -111,16 +112,12 @@ void Credentials::get_user_by_email( QString email ){
     sql_api.add_table("users");
     sql_api.add_field("*");
     sql_api.add_equ("name",email);
-    QJsonDocument d = get_json_result();
-    if(set_user(d)){
+    if(set_user(fetch_remote())){
         emit got_user_data();
     }
     else {
         qDebug()<<"WRONG EMAIL:"<<email;
     }
-}
-QJsonDocument Credentials::get_json_result(){
-    return is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
 }
 bool Credentials::update_user_activity( QString activity ){
     sql_api.set_method( sqlApi::INSERT );
@@ -134,27 +131,19 @@ bool Credentials::update_user_activity( QString activity ){
     pull_query( sql_api.get_query() );
     return true;
 }
-int Credentials::geti( QJsonDocument doc  , QString key  , int i ){
-    if( doc.isNull() )return 0;
+int Credentials::geti( QJsonArray doc  , QString key  , int i ){
+    if( !doc.count() )return 0;
     QJsonValue val;
-    if( doc.isArray() ){
-        val = doc.array().at( i );
-        val = val.toObject().take( key );
-    } else {
-        val = doc.object().take( key );
-    }
+    val = doc.at( i );
+    val = val.toObject().take( key );
     if( val.isString() )return val.toString().toInt();
     else return val.toInt();
 }
-QString Credentials::gets( QJsonDocument doc  , QString key  , int i ){
-    if( doc.isNull() )return "";
+QString Credentials::gets( QJsonArray doc  , QString key  , int i ){
+    if( !doc.count() )return "";
     QJsonValue val;
-    if( doc.isArray() ){
-        val = doc.array().at( i );
-        val = val.toObject().take( key );
-    } else {
-        val = doc.object().take( key );
-    }
+    val = doc.at( i );
+    val = val.toObject().take( key );
     return val.toString();
 }
 void Credentials::get_user_data( QString login  , QString pass, int social){
@@ -167,14 +156,13 @@ void Credentials::get_user_data( QString login  , QString pass, int social){
     sql_api.add_equ( "name"  , login );
     if(social==0)sql_api.add_pass_equ( "pass"  , pass );
     if(debg)qDebug()<< "REC USERQUERY:"<< sql_api.get_query();
-    QJsonDocument r = is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
     //    if(debg)qDebug()<< "R:"<< r;
     //   if(debg)qDebug()<< "RE:"<< r.array().isEmpty()<< r.array().count();
-    if(!set_user(r))
+    if(!set_user(fetch_remote()))
         emit rec_acc_not_found();
 }
-bool Credentials::set_user(QJsonDocument r){
-    if( !r.array().isEmpty() ){
+bool Credentials::set_user(QJsonArray r){
+    if( !r.isEmpty() ){
         curr_id = geti( r  , "id" );
         curr_user = gets( r  , "name" );
         curr_pass = gets( r  , "pass" );
@@ -210,7 +198,6 @@ bool Credentials::set_user(QJsonDocument r){
 
 QByteArray Credentials::get_jwt(){
     QByteArray r = is_raw_data( wait_and_get_reply( pull_query( serverRoot+"/api/jwt.php") ) );
-    qDebug()<<"JWT SET:"<<r;
     return r;
 }
 void Credentials::get_remote_params(){
@@ -219,24 +206,24 @@ void Credentials::get_remote_params(){
     sql_api.add_table( "appsettings" );
     sql_api.add_field( "var,val" );
     sql_api.add_equ( "user"  , "all_users");
-    qDebug()<< "PARAMS REQUEST:"<< sql_api.get_query();
-    QJsonDocument r = is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
-    //    if(debg)qDebug()<< "R:"<< r;
-    //   if(debg)qDebug()<< "RE:"<< r.array().isEmpty()<< r.array().count();
-    qDebug()<<"PARAMS SET:"<<r.isArray();
-    if( !r.array().isEmpty() ){
-        QJsonArray ar=r.array();
-        qDebug()<<"Params count:"<<ar.count();
-        for(int i=0;i<ar.count();i++){
-            QJsonObject json(ar.at(i).toObject());
-            qDebug()<<json.value("var")<<"="<<json.value("val");
-            QString val=json.value("val").toString();
-            QString var=json.value("var").toString();
-            if(var=="carousel_video_duration")player_offset=val.toInt();
-            if(var=="carousel_video")player_enabled=val.toInt();
-            if(var=="carausel_sliders_mutithreading")
-            qDebug()<<player_offset<<player_enabled;
+    QJsonArray ar = fetch_remote();
+    for(int i=0;i<ar.count();i++){
+        QJsonObject json(ar.at(i).toObject());
+        QString val=json.value("val").toString();
+        QString var=json.value("var").toString();
+        if(var=="carousel_video_duration")prospect_settings.player_offset=val.toInt();
+        if(var=="carousel_video")prospect_settings.player_enabled=val.toInt();
+        if(var=="show_prospect_favs")prospect_settings.prospect_favs=val.toInt();
+        if(var=="show_prospect_shares")prospect_settings.prospect_shares=val.toInt();
+        if(var=="show_toggled_star")prospect_settings.prospect_osd=val.toInt();
+        if(var=="restrict_if_no_context")prospect_settings.menu_context_restrict=val.toInt();
+        if(var=="prospect_initial_view")prospect_settings.prospect_initial_view=val.toInt();
+        if(var=="prospect_filter_chars")prospect_settings.prospect_filter_chars=val.toInt();
+        if(var=="widget_height_factor"){
+            prospect_settings.widget_height_factor=val.toDouble();
         }
+        if(var=="search_switch_with_top_bar")prospect_settings.search_switch_with_top_bar=val.toInt();
+        qDebug()<<"param:"<<var<<"-"<<val;
     }
 }
 QPixmap Credentials::circlePix(QPixmap p){
@@ -274,13 +261,14 @@ QPixmap Credentials::circlePix(QPixmap p){
     return p2;
 }
 bool Credentials::update_loc(){
-    sql_api.set_method( sqlApi::INSERT );
-    sql_api.add_table( "trip" );
-    sql_api.add_insdata( curr_id );
-    sql_api.add_insdata( lat );
-    sql_api.add_insdata( lon );
-    sql_api.add_insDate();
-    sql_api.send_query();
+    sql_gps.set_method( sqlApi::INSERT );
+    sql_gps.add_table( "trip" );
+    sql_gps.add_insdata( curr_id );
+    sql_gps.add_insdata( lat );
+    sql_gps.add_insdata( lon );
+    sql_gps.add_insDate();
+    sql_gps.send_query();
+    qDebug()<<"LAT<LON:"<<lat<<lon;
     return true;
 }
 bool Credentials::check_signature(){
@@ -295,7 +283,7 @@ bool Credentials::check_signature(){
         sql_api.add_equ( "hwid"  , hsh );
         QUrl query = sql_api.get_query();
         int qid = pull_query( query );
-        QJsonDocument r = is_data( wait_and_get_reply( qid ) );
+        QJsonArray r = fetch_remote();
         if(debg)qDebug()<<"check hash query:"<<query;
         if(debg)qDebug()<<"check hash in db-result:"<<r;
 
@@ -340,8 +328,8 @@ bool Credentials::add_new_user( QString login, QString pass, QString nick, QStri
     sql_api.add_insdata( token );
     sql_api.add_insdata(0);
     sql_api.add_insdata(0);
-    QJsonDocument r = is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
-    if( !r.isEmpty() ){
+    QJsonArray r= fetch_remote();
+    if( r.count() ){
         curr_id = geti( r  , "lastinsertid" );
         writeFile( f_user_login  , login.toLatin1() );
         writeFile( f_user_nick  , nick.toLatin1() );
@@ -351,25 +339,6 @@ bool Credentials::add_new_user( QString login, QString pass, QString nick, QStri
         return true;
     } else return false;
 }
-QJsonDocument Credentials::is_data( QList< QByteArray> r ){
-    QJsonDocument r1( QJsonDocument::fromJson( r.takeFirst() ) );
-    if( r1.isArray() ){
-        //    if(debg)qDebug()<< "Response************** array "<< r1.array();
-        if( r1.array().isEmpty() ){
-            if(debg)qDebug()<< " ARRAY EMPTY";
-            return  QJsonDocument();
-        }
-    }
-    if( r1.isObject() ){
-        //     if(debg)qDebug()<< "Response************** object "<< r1.array();
-        if( r1.object().isEmpty() ){
-            if(debg)qDebug()<< " OBJECT EMPTY";
-            return QJsonDocument();
-        }
-    }
-    return r1;
-
-}
 QByteArray Credentials::is_raw_data( QList< QByteArray> r ){
     return r.takeFirst();
 }
@@ -378,7 +347,7 @@ int Credentials::check_login( QString login ){
     sql_api.add_table( "users" );
     sql_api.add_field( "*" );
     sql_api.add_equ( "name"  , login );
-    QJsonDocument r = is_data( wait_and_get_reply( pull_query( sql_api.get_query() ) ) );
+    QJsonArray r = fetch_remote();
     if( !r.isEmpty() ){
         return geti( r  , "id" );
     }
@@ -407,61 +376,6 @@ void Credentials::update_user( QString login  , QString pass  , QString nick  , 
     curr_user = login;
     upload_file( f_user_avatar );
 }
-
-//bool Credentials::check_update(){
-//    return false;
-//#if defined (Q_OS_ANDROID)
-//    downloaderStd downloader;
-//    QString updates = downloader.download( chk_update_url );
-//    updates = updates.replace( "\r"  , "" );
-//    updates = updates.replace( "\n"  , "" );
-//    int ver = updates.toInt();
-//    QString curr_version_s=updates;
-//    if(debg)qDebug()<< "WAND:CREDENTIALS:-- current version:"<< version<< "  , "<< updates;
-//    if( ver != version ){
-//        QString uurl=dwn_update_url+curr_version_s+"/android-build-debug.apk";
-
-//        if(debg)qDebug()<< "WAND:CREDENTIALS:-- updating to version "<< updates << " from "<< uurl;
-//        // update_user_activity( "APP UPDATE NEEDED" );
-//        if(debg)qDebug()<<"REQUEST URL:"<<uurl;
-//        //      connect(&downloader,SIGNAL(progress(qint64,qint64)),this,SLOT(downloadProgress(qint64,qint64)));
-//        QByteArray apkDataDytes=downloader.download(uurl);
-//        if(debg)qDebug()<<"UPGRADER DATA SIZE: "<<apkDataDytes.size()<<" BYTES.";
-//        QString dest_file=QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +"/android-build-release-signed.apk";
-//        //     if(QFile::exists(dest_file)){
-//        //          QFile::remove(dest_file);
-//        //          if(QFile::exists(dest_file)){
-//        //              if(debg)qDebug()<<"PLIK DALEJ ISTNIEJE!!!!!!!!!!!!!!!!";
-//        //          } else {
-//        //              if(debg)qDebug() << "JUZ NIE ISTNIEJE";
-//        //          }
-//        //      }
-//        if(debg)qDebug()<<"PROCESSING...";
-//        QFile* f=new QFile();
-//        f->setFileName(dest_file);
-//        f->open(QIODevice::WriteOnly);
-//        f->write(apkDataDytes);
-//        f->close();
-//        //      if(debg)qDebug()<<"WAITING FOR FILE WRITE";
-//        //      while(f->isOpen())
-//        //     {}
-//        if(QFile::exists(dest_file)){
-//            QString jfile=dest_file.replace("file:","content:");
-//            QAndroidJniObject jsText = QAndroidJniObject::fromString(jfile);
-//            if(debg)qDebug()<<"FILE DOWNLOADED OK ("<<jfile<<")";
-
-//            QAndroidJniObject::callStaticMethod<jint>("upgrader/upgrader/upgrader",
-//                                                      "installApp",
-//                                                      "(Ljava/lang/String;)I",
-//                                                      jsText.object<jstring>());
-//        } else {
-//            if(debg)qDebug()<<"UPDATE FAILED-FILE DOES NOT EXIST";
-//        }
-//        return true;
-//    } else
-//#endif
-//        return false;
-//}
 void Credentials::downloadProgress(qint64 p,qint64 tot){
     int perc=(qreal(tot-p)/qreal(tot))*100;
     if(debg)qDebug()<<"DOWNLOADPROGRESS:"<<p<<tot<<perc<<" left";
@@ -560,79 +474,39 @@ QString Credentials::randHash( int len ){
 /*
  * FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES FAVOURITES *
  */
-void Credentials::get_titles(){
-    if(debg)qDebug()<<"GET TILES";
-    int resid = make_request( "getTitles" );
-    QTimer* timer = new QTimer( );
-    timer->setInterval( 100 );
-    int titcnt = 0;
-    bool replied = false;
-    timer->start( 0 );
- //   connect( this  , SIGNAL( got_titles( QJsonArray ) )  , timer  , SLOT( deleteLater() ) );
-    connect( this  , SIGNAL( got_titles( QJsonArray ) )  , timer  , SLOT( stop() ) );
-    connect( timer  , &QTimer::timeout  , [ = , &titcnt  , &replied](){
-        QList< QByteArray> reply = get_reply( resid );
-        if( !reply.empty() ){
-            replied = true;
-            QByteArray res;
-            res = reply.takeFirst();
-            res.replace( "\\"  , "" );
-            if(debg)qDebug()<<"TITLES JSON:"<<reply<<"???????"<<res<<"???????"<<QJsonDocument::fromJson(res);
-            titles = new QJsonArray(QJsonDocument::fromJson( res ).array());
-            titcnt = titles->count();
-            //    sql_api.selectQuery({"timeline"},{"title_id","COUNT( * )AS count"},{"title_id"});
-            sql_api.clear_all();
-            sql_api.set_method( sqlApi::SELECT );
-            sql_api.add_table( "timeline" );
-            sql_api.add_field( "title_id" );
-            sql_api.add_field( "COUNT( * )AS count" );
-            sql_api.set_groupby( "title_id" );
-            QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-            if( !reply.empty() ){
-                gt = QJsonDocument::fromJson(reply.takeFirst());
-                QByteArray gtb = gt.toBinaryData();
-                if( !writeFile( f_global_titles  , gtb ) ){
-                    if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS - "<< f_global_titles;
-                }
-            } else {
-                QByteArray gtb = readFile( f_global_titles );
-                gt = QJsonDocument::fromBinaryData( gtb );
+void Credentials::prepare_titles(){
+    titles=new QJsonArray(get_titles());
+    jtl=get_timeline();
+    int titcnt = titles->count();
+    //    sql_api.selectQuery({"timeline"},{"title_id","COUNT( * )AS count"},{"title_id"});
+    int tcnt = jtl.count();
+    for( int i = 0;i< titcnt;i++ ){
+        QByteArray titati=titles->at( i ).toObject().value( "filename" ).toString().toLatin1();
+        int title_id = titles->at( i ).toObject().value( "id" ).toString().toInt();
+        title_media[i] = new QByteArray(titles->at( i ).toObject().value( "filename" ).toString().toLatin1());
+        title_oid[i] = titles->at( i ).toObject().value( "oid" ).toString().toInt();
+        int cnt = 0;
+        for( int j = 0;j< tcnt;j++ ){
+            if( title_id == jtl.at( j ).toObject().value( "title_id" ).toString().toInt() ){
+                cnt = jtl.at( j ).toObject().value( "count" ).toInt();
+                title_items[i] = cnt;
+                timeline_count_by_title_id[title_id] = cnt;
+                break;
             }
-            int tcnt = gt.array().count();
-            qDebug()<<"TTTIT:"<<*titles<<titcnt;
-            for( int i = 0;i< titcnt;i++ ){
-                QByteArray titati=titles->at( i ).toObject().value( "filename" ).toString().toLatin1();
-                                qDebug()<<"TITLE!!!!:"<<titles->count()<<i<<titles->at(i)<<titati;
-                int title_id = titles->at( i ).toObject().value( "id" ).toInt();
-                title_media[i] = new QByteArray(titles->at( i ).toObject().value( "filename" ).toString().toLatin1());
-                title_oid[i] = titles->at( i ).toObject().value( "oid" ).toInt();
-                int cnt = 0;
-                for( int j = 0;j< tcnt;j++ ){
-                    if( title_id == gt.array().at( j ).toObject().value( "title_id" ).toString().toInt() ){
-                        cnt = gt.array().at( j ).toObject().value( "count" ).toInt();
-                        title_items[i] = cnt;
-                        timeline_count_by_title_id[title_id] = cnt;
-
-                        break;
-                    }
-                }
-            }
-            emit got_titles( *titles );
-            if(debg)qDebug()<<"TITLES:"<<titles;
         }
-    } );
+    }
+    emit got_titles();
 }
 void Credentials::get_favs( bool write ){
     get_favs( ""  , write );
 }
 void Credentials::get_favs( QString type  , bool write ){
     //  if(debg)qDebug()<<"GET FANS:"<<type<<write;
-    get_fav_videos_list( write );
-    if( !offline_m ){
+    if( !offline_m && write){
         if( type == "fav_items" || type == "" ){
             jfi = get_fav_items();
-            if( jfi.array().count() != 0 && write ){
-                QByteArray bfi = jfi.toBinaryData();
+            if( jfi.count() != 0 && write ){
+                QByteArray bfi(QJsonDocument(jfi).toBinaryData());
                 if( !writeFile( f_user_fav_i  , bfi ) ){
                     if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS - "<< f_user_fav_s;
                 }
@@ -640,92 +514,132 @@ void Credentials::get_favs( QString type  , bool write ){
         }
         if( type == "fav_scenes" || type == "" ){
             jfs = get_fav_scenes();
-            if( jfs.array().count() != 0 && write ){
-                QByteArray bfs = jfs.toBinaryData();
+            if( jfs.count() != 0 && write ){
+                QByteArray bfs(QJsonDocument(jfs).toBinaryData());
                 if( !writeFile( f_user_fav_s  , bfs ) ){
                     if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS - "<< f_user_fav_s;
                 }
             }
         }
-        if( type == "fav_videos" || type == "" ){
-            jfm = get_fav_videos();
-            if( jfm.array().count() != 0 && write ){
-                QByteArray bfm = jfm.toBinaryData();
-                if( !writeFile( f_user_fav_m  , bfm ) ){
-                    if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS - "<< f_user_fav_m;
+        if( type == "fav_videos"  || type=="videos" || type == "" ){
+            jfv = get_fav_videos();
+            if( jfv.count() != 0 && write ){
+                QByteArray bfv = QJsonDocument(jfv).toBinaryData();
+                if( !writeFile( f_user_fav_v  , bfv ) ){
+                    if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS - "<< f_user_fav_v;
                 }
             }
         }
+        jp=get_producers();
+        if( jp.count() != 0 && write ){
+            QByteArray bp = QJsonDocument(jp).toBinaryData();
+            if( !writeFile( f_producers  , bp ) ){
+                if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE PRODUCERS - "<< f_producers;
+            }
+        }
+        jtl=get_timeline();
+        if( jtl.count() != 0 && write ){
+            QByteArray bt = QJsonDocument(jtl).toBinaryData();
+            if( !writeFile( f_titles_ev_cnt  , bt) ){
+                if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE PRODUCERS - "<< f_producers;
+            }
+        }
+
     } else {
         if(debg)qDebug()<< "WAND:CREDENTIALS: !!! OFFLINE !!! ";
         QByteArray bfi = readFile( f_user_fav_i );
         QByteArray bfs = readFile( f_user_fav_s );
-        QByteArray bfm = readFile( f_user_fav_m );
-        jfi = QJsonDocument::fromBinaryData( bfi );
-        jfs = QJsonDocument::fromBinaryData( bfs );
-        jfm = QJsonDocument::fromBinaryData( bfm );
+        QByteArray bfm = readFile( f_user_fav_v );
+        QByteArray bp = readFile( f_producers );
+        QByteArray bt = readFile( f_titles_ev_cnt );
+        jfi = QJsonDocument::fromBinaryData( bfi ).array();
+        jfs = QJsonDocument::fromBinaryData( bfs ).array();
+        jfv = QJsonDocument::fromBinaryData( bfm ).array();
+        jp = QJsonDocument::fromBinaryData( bp ).array();
+        jtl = QJsonDocument::fromBinaryData( bt ).array();
     }
+    qDebug()<<"FV VIDEOS:"<<jfv;
     emit got_favs();
 }
-QJsonDocument Credentials::get_fav_items(){
+QJsonArray Credentials::get_fav_items(){
     sql_api.set_method( sqlApi::SELECT );
-    sql_api.add_table( "fav_items" );
+    sql_api.add_table( "fav_items, titles" );
     sql_api.add_field( "*" );
     sql_api.add_equ( "user_id"  , curr_id );
-    sql_api.set_sort( "time" );
-    QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-    QJsonDocument r;
-    if( !reply.empty() ){
-        r = QJsonDocument::fromJson( reply.takeFirst() );
+    sql_api.add_equ_np("title_id","titles.id");
+    if(context_id!=-1){
+        sql_api.add_equ( "oid"  , QString::number(context_id) );
+        qDebug()<<"Added:"<<context_id;
     }
-    return r;
+    sql_api.set_sort( "time" );
+    return  fetch_remote();
+
 }
-QJsonDocument Credentials::get_fav_scenes(){
+QJsonArray Credentials::fetch_remote(bool sh){
+    QList<QByteArray> ls=wait_and_get_reply( pull_query( sql_api.get_query(sh) ));
+    QJsonDocument r;
+    r={};
+    if(!ls.empty())r=QJsonDocument::fromJson( ls.takeFirst() );
+    return r.array();
+}
+QJsonArray Credentials::get_fav_scenes(){
+    qDebug()<<"curr_id:"<<curr_id;
     sql_api.set_method( sqlApi::SELECT );
-    sql_api.add_table( "fav_scenes" );
+    sql_api.add_table( "fav_scenes, titles" );
     sql_api.add_field( "*" );
     sql_api.add_equ( "user_id"  , curr_id );
+    sql_api.add_equ_np("fav_scenes.title_id","titles.id");
+    if(context_id!=-1){
+        sql_api.add_equ( "oid"  , QString::number(context_id) );
+        qDebug()<<"Added:"<<context_id;
+    }
     sql_api.set_sort( "time" );
-    QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-    QJsonDocument r;
-    if( !reply.empty() ){
-        r = QJsonDocument::fromJson( reply.takeFirst() );
-    }
-    return r;
+    return fetch_remote(true);
 }
-QJsonDocument Credentials::get_fav_videos(){
+QJsonArray Credentials::get_producers(){
+    sql_api.set_method(sqlApi::SELECT);
+    sql_api.add_table("producers");
+    sql_api.add_field("pid, name, others");
+    return fetch_remote();
+}
+QJsonArray Credentials::get_timeline(){
     sql_api.set_method( sqlApi::SELECT );
-    sql_api.add_table( "titles  , fav_videos" );
-    sql_api.add_field( "fav_videos.id  , titles.id  , titles.title  , titles.filename  , titles.duration" );
-    sql_api.add_equ( "fav_videos.user_id"  , curr_id );
-    sql_api.add_equ_np( "fav_videos.title_id"  , "titles.id" );
-    QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-    QJsonDocument r;
-    if( !reply.empty() ){
-        r = QJsonDocument::fromJson( reply.takeFirst() );
-    }
-    return r;
+    sql_api.add_table( "timeline" );
+    sql_api.add_field( "title_id" );
+    sql_api.add_field( "COUNT( * )AS count" );
+    sql_api.set_groupby( "title_id" );
+    return fetch_remote();
 }
-QJsonDocument Credentials::get_fav_videos_list( bool write ){
+QJsonArray Credentials::get_titles(){
+    if(debg)qDebug()<<"COMT"<<prospect_settings.menu_context_restrict<<context_id<<!context_unlocked;
+    if(debg)qDebug()<<"GET TILES";
+    sql_api.set_method(sqlApi::SELECT);
+    sql_api.add_table("titles,producers");
+    sql_api.add_field("*");
+    sql_api.add_nequ("id",0);
+    sql_api.add_equ_np("oid","pid");
+    if(context_id!=-1){
+        sql_api.add_equ( "oid"  , context_id);
+        qDebug()<<"Added:"<<context_id;
+    }
+    sql_api.set_sort("name asc");
+    jv=fetch_remote();
+    if(debg)qDebug()<<"context unlock:"<<context_unlocked<<prospect_settings.menu_context_restrict<<context_id;
+    return jv;
+}
+QJsonArray Credentials::get_fav_videos( ){
     QJsonDocument res;
-    if( write ){
-        sql_api.set_method( sqlApi::SELECT );
-        sql_api.add_table( "fav_videos" );
-        sql_api.add_field( "title_id" );
-        sql_api.add_equ( "user_id"  , curr_id );
-        QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-        if( !reply.empty() ){
-            fvl = QJsonDocument::fromJson( reply.takeFirst() );
-        }
-        QByteArray bfml = fvl.toBinaryData();
-        if( !writeFile( f_user_fav_ml  , bfml ) ){
-            if(debg)qDebug()<< "WAND:CREDENTIALS: !!! CANNOT SAVE FAVS ML - "<< f_user_fav_ml;
-        }
-    } else {
-        QByteArray bfml = readFile( f_user_fav_ml );
-        fvl = QJsonDocument::fromBinaryData( bfml );
+    sql_api.set_method( sqlApi::SELECT );
+    sql_api.add_table( "titles,fav_videos" );
+    sql_api.add_field( "*" );
+    sql_api.add_equ( "user_id"  , curr_id );
+    sql_api.add_equ_np( "title_id"  , "titles.id");
+    if(context_id!=-1){
+        sql_api.add_equ( "oid"  , context_id );
+        qDebug()<<"Added:"<<context_id;
     }
-    return fvl;
+    jfv=fetch_remote();
+    return jfv;
 }
 int Credentials::check_duplicate( QString fields  , QString tabl  , QString cond ){
     QJsonObject rarr;
@@ -733,11 +647,10 @@ int Credentials::check_duplicate( QString fields  , QString tabl  , QString cond
     sql_api.add_table( tabl );
     sql_api.add_field( fields );
     sql_api.add_cond( cond );
-    QList< QByteArray> reply = wait_and_get_reply( pull_query( sql_api.get_query() ) );
-    if( !reply.empty() ){
-        QJsonDocument d = QJsonDocument::fromJson( reply.takeFirst() );
+    QJsonArray d=fetch_remote();
+    if(!d.isEmpty())
         return geti( d  , "id" );
-    } else return false;
+    else return false;
 }
 bool Credentials::check_item_favs( QString image ){
     if( check_duplicate( "*"  , "fav_items"  , "user_id = '"+QString::number( curr_id )+"' and image = '"+image+"'" )>0 )
@@ -778,10 +691,10 @@ void Credentials::remove_from_favs( int id  , QString table  , QString sender ){
     }
     sql_api.add_equ( "user_id"  , curr_id );
     videos_to_unmark = id;
-    wait_and_get_reply( pull_query( sql_api.get_query() ) );
+    fetch_remote();
     get_favs( table  , true );
 }
-void Credentials::add_fav_item( int id  , QString title  , QString event  , QString name  , QString image  , int time ){
+void Credentials::add_fav_item( int id  , QString title  , int tid,  QString event  , QString name  , QString image  , int time ){
     //    if(debg)qDebug()<< "WAND:CREDENTIALS:add_fav_item"<< id;
     //    if( !check_duplicate( "iid"  , "fav_items"  , "iid = '"+QString::number( id )+"' and user_id = '"+QString::number( curr_id )+"'" ) ){
     //        if(debg)qDebug()<< "WAND:CREDENTIALS:NO DUPLICATES add fav item";
@@ -796,12 +709,14 @@ void Credentials::add_fav_item( int id  , QString title  , QString event  , QStr
     sql_api.add_instime( time );
     sql_api.add_insDate();
     sql_api.add_insdata( id );
-    wait_and_get_reply( pull_query( sql_api.get_query() ) );
+    sql_api.add_insdata( tid );
+    fetch_remote();
     get_favs( "fav_items"  , true );
     //     } else if(debg)qDebug()<< "WAND:CREDENTIALS:ITEM:"<< id<< " exist as fav";
 }
-void Credentials::add_fav_scene( int id  , QString title  , QString event  , QString scene  , int time ){
+void Credentials::add_fav_scene( int id  , QString title ,int tid , QString event  , QString scene  , int time ){
     QJsonObject rarr;
+    qDebug()<<"currid:"<<curr_id;
     //    if( !check_duplicate( "sid"  , "fav_scenes"  , "sid = '"+QString::number( id )+"' and user_id = '"+QString::number( curr_id )+"'" ) ){
     sql_api.set_method( sqlApi::INSERT );
     sql_api.add_table( "fav_scenes" );
@@ -813,7 +728,8 @@ void Credentials::add_fav_scene( int id  , QString title  , QString event  , QSt
     sql_api.add_instime( time );
     sql_api.add_insDate();
     sql_api.add_insdata( id );
-    wait_and_get_reply( pull_query( sql_api.get_query() ) );
+    sql_api.add_insdata( tid );
+    fetch_remote(true);
     get_favs( "fav_scenes"  , true );
     //      } else if(debg)qDebug()<< "WAND:CREDENTIALS:SCENE:"<< id<< " exist as fav";
 }
@@ -824,7 +740,7 @@ void Credentials::add_fav_videos( int id ){
     sql_api.add_default();
     sql_api.add_insdata( curr_id );
     sql_api.add_insdata( id );
-    wait_and_get_reply( pull_query( sql_api.get_query() ) );
+    fetch_remote(true);
     get_favs( "fav_videos"  , true );
 }
 QByteArray Credentials::readFile( QString _name ){
@@ -863,19 +779,6 @@ bool Credentials::writeFile( QString _name  , const QByteArray _fcont ){
         f.write( _fcont );
         f.close();
         return true;
-    }
-}
-void Credentials::get_params(){
-    sql_api.set_method( sqlApi::SELECT );
-    sql_api.add_table( "apk_params" );
-    sql_api.add_field( "value" );
-    sql_api.add_equ( "name"  , "player_offset" );
-    QUrl query = sql_api.get_query();
-    int qid = pull_query( query );
-    QJsonDocument r = is_data( wait_and_get_reply( qid ) );
-    if( !r.isEmpty() ){
-        player_offset = gets( r  , "value" ).toInt();
-        if(debg)qDebug()<< "Player offset:"<< player_offset;
     }
 }
 Credentials::~Credentials(){

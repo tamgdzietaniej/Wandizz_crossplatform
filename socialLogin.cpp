@@ -6,7 +6,7 @@ socialLogin::socialLogin(QWidget *parent) :
     ui(new Ui::webhelper)
 {
     ui->setupUi(this);
-    setAttribute(Qt::WA_DeleteOnClose);
+    setAttribute(Qt::WA_DeleteOnClose, true);
     setAttribute(Qt::WA_TranslucentBackground,true);
     setAttribute(Qt::WA_NoSystemBackground,true);
     setStyleSheet("background:rgba(0,0,0,0);");
@@ -55,6 +55,7 @@ void socialLogin::gotAnswer(QString u){
             } else {
                 if(ob.contains("error")){
                     show_error(ob.value("error").toString());
+                    emit go("back",{});
                 }
             }
         }

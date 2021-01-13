@@ -86,7 +86,7 @@ void profSettings::on_b_save_clicked(){
         }
         qDebug()<<"AVATAR FILE:"<<f_user_avatar<<","<<QFileInfo(f_user_avatar).exists();
             emit upd_user(upd_login,upd_pass,upd_nick,upd_phon);
-        emit go("home");
+        emit go("home",{});
     } else {
         ui->b_save->setDisabled(false);
         return;
@@ -486,7 +486,7 @@ void profSettings::on_b_back_clicked(){
         }
     }
     qDebug()<<"GO BACK";
-    emit go("back");
+    emit go("back",{});
 }
 void profSettings::on_b_add_foto_released(){
     pressed=false;

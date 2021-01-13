@@ -169,5 +169,8 @@
         <file>gui/APP ICONS/gallery.png</file>
         <file>gui/buttons/mute.png</file>
         <file>gui/buttons/unmute.png</file>
+        <file>gui/icons/settings.png</file>
+        <file>gui/icons/left-arrow.png</file>
+        <file>gui/icons/kisspng-magnifying-glass-cartoon-magnifier-5a734fae643537.3252980615175064784105.png</file>
     </qresource>
 </RCC>

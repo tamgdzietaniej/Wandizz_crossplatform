@@ -1,10 +1,11 @@
 #ifndef SOCIALLOGIN_H
 #define SOCIALLOGIN_H
-
-#include "globals.h"
+#include <QString>
+#include <QObject>
 #include <QtQuick>
 #include <QQmlContext>
 #include <QQmlEngine>
+#include <QMainWindow>
 #include "browser.h"
 namespace Ui {
 class webhelper;
@@ -45,6 +46,7 @@ signals:
     void go(QString);
     void gotSocialData(QString,QString,QString,QString,QString);
     void gotAppleId(QString);
+    void go(QString,QStringList);
 
 
 protected:

@@ -110,14 +110,11 @@ protected:
     // void paintEvent(QPaintEvent*) override;
 signals :
     void process();
-    void go_web(QString);
-    void go_carousel(const QString,QString);
+    void go(const QString,QStringList);
     void here_i_am();
-    void go_user_prof();
     void start_offset_meter();
     void show_menu(QPoint);
     void ready();
-    void go(QString);
 public slots :
     void setTitle2(const QString);
     void setTitle2();

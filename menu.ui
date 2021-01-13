@@ -28,7 +28,7 @@
   <property name="maximumSize">
    <size>
     <width>220</width>
-    <height>600</height>
+    <height>670</height>
    </size>
   </property>
   <property name="font">
@@ -136,73 +136,8 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
      <property name="verticalSpacing">
       <number>4</number>
      </property>
-     <item row="1" column="1" colspan="2">
-      <widget class="QPushButton" name="m_videorec">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>AppleGothic</family>
-         <pointsize>16</pointsize>
-        </font>
-       </property>
-       <property name="styleSheet">
-        <string notr="true"/>
-       </property>
-       <property name="text">
-        <string>Video recognition</string>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="1" colspan="2">
-      <widget class="Line" name="line_2">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>1</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>176</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>199</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="lineWidth">
-        <number>0</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1">
-      <widget class="QPushButton" name="m_fav_scenes">
+     <item row="12" column="1">
+      <widget class="QPushButton" name="m_prof_settings">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>2</horstretch>
@@ -234,88 +169,14 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Favourite scenes</string>
+        <string>Profile settings</string>
        </property>
        <property name="flat">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="13" column="1">
-      <widget class="QPushButton" name="m_security">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>245</width>
-         <height>35</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>245</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>AppleGothic</family>
-         <pointsize>16</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Security</string>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QPushButton" name="m_videos">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>334</width>
-         <height>30</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>245</width>
-         <height>35</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>AppleGothic</family>
-         <pointsize>16</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Browse videos</string>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="1" colspan="2">
+     <item row="17" column="1" colspan="2">
       <widget class="QPushButton" name="m_gohome">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -358,26 +219,51 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="14" column="1">
-      <widget class="QPushButton" name="m_legal">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
+     <item row="7" column="1" colspan="2">
+      <widget class="Line" name="line_2">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>2</horstretch>
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>1</horstretch>
          <verstretch>1</verstretch>
         </sizepolicy>
        </property>
        <property name="minimumSize">
         <size>
-         <width>245</width>
-         <height>35</height>
+         <width>176</width>
+         <height>0</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>245</width>
+         <width>199</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="tabletTracking">
+        <bool>false</bool>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Plain</enum>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QPushButton" name="m_search_scenes">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
          <height>30</height>
         </size>
        </property>
@@ -388,14 +274,73 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
         </font>
        </property>
        <property name="text">
-        <string>Legal</string>
+        <string>Search Scenes</string>
        </property>
        <property name="flat">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="16" column="0">
+     <item row="4" column="1" colspan="2">
+      <widget class="QPushButton" name="m_search_videos">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Search videos</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="2">
+      <widget class="QPushButton" name="m_videorec">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string>Video recognition</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="18" column="0">
       <widget class="QLabel" name="i_logout">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -423,7 +368,7 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="8" column="1">
       <widget class="QPushButton" name="m_fav_videos">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -466,33 +411,119 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="label">
+     <item row="16" column="1">
+      <widget class="QPushButton" name="m_legal">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>1</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>245</width>
+         <height>35</height>
+        </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>16777215</width>
-         <height>28</height>
+         <width>245</width>
+         <height>30</height>
         </size>
        </property>
-       <property name="autoFillBackground">
-        <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background:rgba(255,255,255,0);</string>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
        </property>
        <property name="text">
-        <string/>
+        <string>Legal</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="10" column="1">
-      <widget class="QPushButton" name="m_prof_settings">
+     <item row="18" column="1">
+      <widget class="QPushButton" name="m_exit">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>245</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>245</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <property name="text">
+        <string>Exit</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QPushButton" name="m_videos">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>334</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>245</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Browse media</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="1">
+      <widget class="QPushButton" name="m_fav_scenes">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>2</horstretch>
@@ -524,14 +555,14 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
         <bool>true</bool>
        </property>
        <property name="text">
-        <string>Profile settings</string>
+        <string>Favourite scenes</string>
        </property>
        <property name="flat">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="2" column="1" colspan="2">
+     <item row="3" column="1" colspan="2">
       <widget class="QPushButton" name="m_search_items">
        <property name="enabled">
         <bool>true</bool>
@@ -568,32 +599,7 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="9" column="1">
-      <widget class="Line" name="line_3">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>1</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>231</width>
-         <height>8</height>
-        </size>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
-       </property>
-       <property name="lineWidth">
-        <number>0</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="1">
+     <item row="14" column="1">
       <widget class="QPushButton" name="m_share">
        <property name="enabled">
         <bool>true</bool>
@@ -630,7 +636,44 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="15" column="1">
+      <widget class="QPushButton" name="m_security">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>2</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>245</width>
+         <height>35</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>245</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <family>AppleGothic</family>
+         <pointsize>16</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Security</string>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1">
       <widget class="QPushButton" name="m_fav_items">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -670,12 +713,62 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
        </property>
       </widget>
      </item>
-     <item row="3" column="1" colspan="2">
-      <widget class="QPushButton" name="m_search_videos">
+     <item row="11" column="1">
+      <widget class="Line" name="line_3">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>1</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>231</width>
+         <height>8</height>
+        </size>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Plain</enum>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>28</height>
+        </size>
+       </property>
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background:rgba(255,255,255,0);</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="m_prospect">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>2</horstretch>
-         <verstretch>0</verstretch>
+         <verstretch>1</verstretch>
         </sizepolicy>
        </property>
        <property name="minimumSize">
@@ -690,45 +783,11 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
          <pointsize>16</pointsize>
         </font>
        </property>
-       <property name="text">
-        <string>Search videos</string>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="16" column="1">
-      <widget class="QPushButton" name="m_exit">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>1</horstretch>
-         <verstretch>1</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>245</width>
-         <height>35</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>245</width>
-         <height>35</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>AppleGothic</family>
-         <pointsize>16</pointsize>
-        </font>
-       </property>
        <property name="styleSheet">
         <string notr="true"/>
        </property>
        <property name="text">
-        <string>Exit</string>
+        <string>Main Prospect</string>
        </property>
        <property name="flat">
         <bool>true</bool>
@@ -753,6 +812,8 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
     <zorder>m_search_items</zorder>
     <zorder>m_videorec</zorder>
     <zorder>i_logout</zorder>
+    <zorder>m_search_scenes</zorder>
+    <zorder>m_prospect</zorder>
    </widget>
   </widget>
   <widget class="QPushButton" name="options">
@@ -987,6 +1048,7 @@ QPushButton:hovered{background-color:rgba(100,100,100,100);}
      <pointsize>31</pointsize>
      <weight>75</weight>
      <bold>true</bold>
+     <stylestrategy>PreferDefault</stylestrategy>
     </font>
    </property>
    <property name="focusPolicy">

@@ -1,58 +1,59 @@
 #ifndef WIDGET_WRAPPER_H
 #define WIDGET_WRAPPER_H
 #include "globals.h"
+#include "gllabel.h"
+#include <QCheckBox>
 class widget_wrapper : public QOpenGLWidget
 {
     Q_OBJECT
 
 public:
-    explicit widget_wrapper(QWidget *parent = nullptr);
+    widget_wrapper(QWidget *parent = nullptr,QString="");
     ~widget_wrapper() override;
-    void set_proxy_widget(QWidget* proxy,qreal op=-1);
-    void set_labels(QString,QString);
     void update_container(int c);
-    void set_container(QRect,QRect,QRect,QRect);
     QPixmap star;
-    void drawBackground(QPainter&);
     void showSearch(bool);
-    QString text;
-    void set_styles(QLabel*,QLabel*,QLabel*);
-    QRect cntr,labr,nicr,cntrw,labrw,nicrw,uprct,starrect;
-    QFont cfont,lfont,nfont;
-    QPen cpen,npen,lpen;
-    int favs_cnt;
-    QString label,nick;
+    void showSearch();
+    bool is_search();
+    Prospect* prospect_init_params;
     bool get_hover(QPoint);
     QPoint mpos;
     int dpi;
-    QString button;
+    bool show_search;
     bool ready_to_paint;
-    QOpenGLWidget *marker;
-    void showSelectors(bool);
-    bool selectors_visible,to_selectors_visible;
-  //  QTimer *timer;
-    QLabel* favs;
-    bool shTop,shMid,frame_pos_setted;
-    int moved;
+    void make_edit();
+    void hideSearch();
+    bool selectors_visible,selectors_visible_prev,issrch;
+    QFrame * tw;
+    //  QTimer *timer;
+    void set_edit();
+    int moved,prev_moved;
     QPoint diff;
     QLabel* labs;
-    QLineEdit *edit;
-    void setFrame(QWidget *mid_frame);
-    QWidget *midFrame;
+    void disableSearch();
+    void enableSearch();
+    QPointer<QLineEdit> edit=nullptr;
+    QWidget *midFrame=nullptr;
     void updateFrameSet();
+    void showSelectors(bool);
+    void setupWrapper(QList<QList<QWidget*>>);
+    QInputMethod* input=QApplication::inputMethod();
+    bool clicked(QWidget*);
+private:
+    QList<QList<QWidget*>> wlist;
+    QList<QList<QPoint>> wpos;
+    QString type;
 protected:
     void paintGL() override;
     void initializeGL() override;
     QRect proxy_geo;
-
     QString pn;
     void resizeEvent(QResizeEvent *e) override;
-public slots:
-  //  void check_timer();
-    void on_text_changed(const QString&);
-private:
 signals:
     void filter(QString);
+    void show_input(bool);
+    void textChanged(const QString&);
+    void keybh(int);
 };
 
 #endif // WIDGET_WRAPPER_H

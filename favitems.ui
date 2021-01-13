@@ -2411,7 +2411,7 @@ background:qlineargradient(spread:reflect, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(4
       <x>0</x>
       <y>210</y>
       <width>400</width>
-      <height>81</height>
+      <height>80</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -3912,7 +3912,7 @@ color:rgb(39, 217, 255);
    <widget class="QLabel" name="lab_favs_icon">
     <property name="geometry">
      <rect>
-      <x>180</x>
+      <x>176</x>
       <y>133</y>
       <width>14</width>
       <height>14</height>
@@ -4062,4 +4062,9 @@ color:#fff;</string>
   <include location="images.qrc"/>
  </resources>
  <connections/>
+ <slots>
+  <signal>on_b_back_clicked()</signal>
+  <slot>recoverStyle()</slot>
+  <slot>slot2()</slot>
+ </slots>
 </ui>

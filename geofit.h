@@ -1,7 +1,11 @@
 #ifndef GEOFIT_H
 #define GEOFIT_H
-#include "globals.h"
-
+#include <QObject>
+#include <QSize>
+#include <QRect>
+#include <QWidget>
+#include <QApplication>
+#include <QScreen>
 class geofit : public QObject
 {
     Q_OBJECT
@@ -19,7 +23,7 @@ public:
     QRect new_w_rect;
     qreal sFX,sFY,v_marg;
 
-    void update_geo(bool);
+    QRect update_geo(bool);
     bool fixed;
     bool resize_container_height;
     qreal set_container_height;

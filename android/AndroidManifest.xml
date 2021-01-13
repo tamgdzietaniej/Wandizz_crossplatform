@@ -73,7 +73,7 @@
         </activity>
         <!-- For adding service(s) please check: https://wiki.qt.io/AndroidServices -->
     </application>
-    <uses-permission android:name="ACCESS_BACKGROUND_LOCATION" android:value="false"/>
+
     <!-- @SystemApi @hide Allows an application to call APIs that allow it to do interactions
          across the users on the device, using singleton services and
          user-targeted broadcasts.  This permission is not available to
@@ -86,7 +86,7 @@
     <permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" android:protectionLevel="signature"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
      <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" android:value="signature"/>
-    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"/>
+
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -96,4 +96,5 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <!-- %%INSERT_FEATURES -->
 
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 </manifest>

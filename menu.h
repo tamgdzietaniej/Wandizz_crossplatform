@@ -13,12 +13,12 @@ public:
     explicit menu(QWidget *parent = nullptr);
     ~menu() override;
     void set_opt_geo(QPoint);
-    void disable(QString);
-    void enable();
     double opac;
     bool showing,hidding;
     bool choosed;
     void deactivate(QString);
+    void set_access(bool);
+    bool is_access;
 private slots:
     void on_m_fav_videos_clicked();
     void on_m_fav_scenes_clicked();
@@ -31,7 +31,9 @@ private slots:
     void on_m_exit_clicked();
     void on_m_search_items_clicked();
     void on_m_share_clicked();
-   void on_m_videos_clicked();
+    void on_m_videos_clicked();
+    void on_m_search_scenes_clicked();
+    void on_m_prospect_clicked();
 
 public slots:
 

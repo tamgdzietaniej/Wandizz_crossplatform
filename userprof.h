@@ -1,6 +1,7 @@
 #ifndef USERPROF_H
 #define USERPROF_H
 #include "globals.h"
+#include <QInputMethod>
 namespace Ui {
 class userProf;
 }

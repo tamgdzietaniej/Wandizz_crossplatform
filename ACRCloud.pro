@@ -1,10 +1,9 @@
-QT       += core gui network multimedia positioning opengl quick qml quickwidgets multimediawidgets webview gui-private
-
+QT       += core gui network opengl quick qml quickwidgets  gui-private
+lessThan(QT_MAJOR_VERSION,6): QT += widgets multimedia positioning multimediawidgets webview
 CONFIG +=  mobility localization
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+CONFIG += c++11
 TEMPLATE = app
 TARGET= WANDIZZ
-CONFIG += c++11
 
 INSTALLS +=target
 DEFINES += QT_DEPRECATED_WARNINGS \
@@ -19,6 +18,7 @@ SOURCES += main.cpp \
     circles.cpp \
     downloader.cpp \
     downloaderStd.cpp \
+    downloader_kopia.cpp \
     mainwidget.cpp \
     menu.cpp \
     mhelper.cpp \
@@ -26,6 +26,7 @@ SOURCES += main.cpp \
     permissions.cpp \
     signin.cpp \
     socialLogin.cpp \
+    statcs.cpp \
     syncscreen.cpp \
     favitems.cpp \
     mypushbutton.cpp \
@@ -37,11 +38,13 @@ SOURCES += main.cpp \
     localization.cpp \
     geofit.cpp \
     profsettings.cpp \
+    topmenuswitcher.cpp \
     userPermissions.cpp \
     userprof.cpp \
-    widget_mapper.cpp \
     widget_wrapper.cpp \
-    write_buffers.cpp
+    widgetgen.cpp \
+    write_buffers.cpp \
+    metasearch.cpp
 
 HEADERS += \
 audiolevel.h \
@@ -54,6 +57,7 @@ audiolevel.h \
     credentials.h \
     downloaderStd.h \
     downloader.h \
+    downloader_kopia.h \
     favitems.h \
     geofit.h \
     globals.h \
@@ -70,15 +74,19 @@ audiolevel.h \
     signin.h \
     socialLogin.h \
     sqlapi.h \
+    statcs.h \
     syncscreen.h \
+    topmenuswitcher.h \
     userPermissions.h \
     userprof.h \
-    widget_mapper.h \
     widget_wrapper.h \
-    write_buffers.h
+    widgetgen.h \
+    write_buffers.h \
+    metasearch.h
 
 FORMS += \
     menu.ui \
+    metasearch.ui \
     signin.ui \
     splash.ui \
     syncscreen.ui \
@@ -123,11 +131,11 @@ include($$PWD/vendor/vendor.pri)
     SOURCES += share_cross.cpp
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
     include(android/ssl/openssl.pri)
-    VERSION = 1.2.6
-    ANDROID_VERSION_CODE = '16'
-    ANDROID_VERSION_NAME = 'WANDIZZ beta'
+    VERSION = 1.2.7
+    ANDROID_VERSION_CODE = '8352'
+    ANDROID_VERSION_NAME = 'WANDIZZ beta(17)'
     ANDROID_MIN_SDK_VERSION = '15'
-    ANDROID_TARGET_SDK_VERSION = '26'
+    ANDROID_TARGET_SDK_VERSION = '29'
 
     RESOURCES += \
         images.qrc \
@@ -150,6 +158,6 @@ DISTFILES += \
     vendor/vendor.pri \
     android/src/wandizz/shares.java \
     android/src/wandizz/shares/shares.java
-
-ANDROID_ABIS = armeabi-v7a
 }
+
+ANDROID_ABIS = armeabi-v7a arm64-v8a

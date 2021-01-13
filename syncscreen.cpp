@@ -240,7 +240,7 @@ void SyncScreen::setTitle2(const QString title, int timeout){
 }
 
 void SyncScreen::carousel(QString offset){
-    emit go_carousel(title,offset);
+    emit go("carousel",{title,offset});
 }
 /**************************************************
  * ********************************************** *
@@ -390,7 +390,7 @@ SyncScreen::~SyncScreen()
 void SyncScreen::on_youtube_clicked()
 {
     qDebug()<<"SYNC-WWW:"<<browser_data;
-    emit(go_web(browser_data));
+    emit(go("web",{browser_data}));
 }
 
 void SyncScreen::show_carousel(){
@@ -537,5 +537,5 @@ void SyncScreen::clearAudioLevels(){
 
 void SyncScreen::on_b_back_clicked()
 {
-    emit go("back");
+    emit go("back",{});
 }

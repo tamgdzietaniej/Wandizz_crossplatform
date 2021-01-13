@@ -1,6 +1,7 @@
 #ifndef CAROUSEL_H
 #define CAROUSEL_H
 #include "mainwidget.h"
+#include "geofit.h"
 
 namespace Ui {
 class Carousel;
@@ -17,10 +18,10 @@ public:
     QTimer* ctimer;
     QString icon[10];
     void set_sliders();
-    void set_params(QString,QString,const int,int,bool);
+    void set_params(QString,int,QString,const int,int,bool);
     int buffered=0;
     int player_offset;
-    int cnt=0;
+    int cnt=0,title_id;
     int scene_cluster[100];
     QString netfile;
     int dcounter;
@@ -36,8 +37,8 @@ public:
     void aimParser();
     int hms2ms(QString);
     QList<int> fav_scenes_list,fav_items_list;
-    void set_fav_scenes_list(QJsonDocument);
-    void set_fav_items_list(QJsonDocument);
+    void set_fav_scenes_list(QJsonArray);
+    void set_fav_items_list(QJsonArray);
     QString curr_title,title,app_version_s;
     bool exiting=false;
     MainWidget* sceneslider;
@@ -55,17 +56,17 @@ private:
     bool chk_buf_dir(QString);
     QString item_urls[1000],scene_data[1000],scene_urls[1000];
     QString  artist_and_album,artist,album;
- //   void correct_offset(int);
+    //   void correct_offset(int);
     QUrl urls[100];
     bool is_online;
-  //  qint64 video_start,video_end,des_start;
+    //  qint64 video_start,video_end,des_start;
     void initClasses();
-  //  QVideoWidget*video;
- //   QMediaPlayer*player;
+    //  QVideoWidget*video;
+    //   QMediaPlayer*player;
     QNetworkAccessManager* man;
     void setupEncoder();
     bool loading;
-//    void init_player();
+    //    void init_player();
     void setUrls();
     QTime checkpoint;
     int loaded_items;
@@ -92,17 +93,17 @@ private:
     QPixmap videopix;
     bool player_enabled;
 public slots :
-    void roll_scene();
- //   void player_state_changed(QMediaPlayer::State);
-  //  void media_buffer_filled_info(int);
- //   void media_info(QMediaPlayer::MediaStatus);
+    //   void player_state_changed(QMediaPlayer::State);
+    //  void media_buffer_filled_info(int);
+    //   void media_info(QMediaPlayer::MediaStatus);
     void parser(QNetworkReply*);
- //   void play();
- //   void stop(bool s=true);
- //   void seek(qint64);
-  //  void check_video_pos(qint64);
+    //   void play();
+    //   void stop(bool s=true);
+    //   void seek(qint64);
+    //  void check_video_pos(qint64);
     void check_mw_fav();
 private slots:
+    void roll_scene();
     void add_fav_scene_clicked();
     void add_fav_item_clicked();
     void generate_widget();
@@ -143,8 +144,8 @@ signals:
     void offscreen_delete(int,QString);
     void offscreen_add(int,QString);
     void carousel_finish();
-    void add_fav_item(int,QString,QString,QString,QString,int);
-    void add_fav_scene(int,QString,QString,QString,int);
+    void add_fav_item(int,QString,int,QString,QString,QString,int);
+    void add_fav_scene(int,QString,int,QString,QString,int);
     void delete_item(int,QString);
     void go(QString,QStringList);
     void go_web(QString);

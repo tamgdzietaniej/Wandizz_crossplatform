@@ -20,7 +20,8 @@ void sqlApi::selectQuery(QStringList tables, QStringList filters, QStringList co
         set_groupby(format.takeFirst());
     if(!format.empty())
         set_sort(format.takeFirst());
-    if(debg)qDebug()<<"SELECT BUILDER:"<<get_query();
+   // if(debg)
+        qDebug()<<"SELECT BUILDER:"<<get_query();
 }
 void sqlApi::clear_all(){
     method=NONE;
@@ -116,7 +117,7 @@ void sqlApi::add_nequ(QString var,QString val){
 }
 void sqlApi::add_nequ(QString var,int val){
     if(!conds.isEmpty())conds.append(" AND ");
-    conds.append(var+"<>"+QString::number(val));
+    conds.append(var+"<>'"+QString::number(val)+"'");
 }
 void sqlApi::add_equ_np(QString var,QString val){
     if(!conds.isEmpty())conds.append(" AND ");
@@ -195,7 +196,7 @@ void sqlApi::set_limit(int l){
     if(l>0)limit=QString::number(l);
     else limit="";
 }
-QUrl sqlApi::get_query(){
+QUrl sqlApi::get_query(bool sh){
     query="met="+meths.at(method);
     //query.append("&wht="+QUrl::toPercentEncoding(fields));
     query.append("&wht="+fields);
@@ -208,6 +209,9 @@ QUrl sqlApi::get_query(){
     query.append("&limit="+QUrl::toPercentEncoding(limit));
     query.append("&gb="+QUrl::toPercentEncoding(groupby));
     query.prepend(root_url);
+    if(sh){
+        qDebug()<<"SH_QUERY:"<<query;
+}
     return query;
 }
 void sqlApi::send_query(){

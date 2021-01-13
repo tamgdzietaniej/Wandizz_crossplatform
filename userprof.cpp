@@ -16,6 +16,7 @@ userProf::userProf(QWidget *parent) :
     setAttribute(Qt::WA_TranslucentBackground,true);
     ui->shadow->setParent(ui->verticalWidget);
     ui->shadow->hide();
+    setAttribute(Qt::WA_DontShowOnScreen,true);
     //   //vibra=new //vibra();
 
 }

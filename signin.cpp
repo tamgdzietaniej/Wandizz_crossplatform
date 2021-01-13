@@ -42,8 +42,8 @@ void SignIn::set_ver(QString ver){
 
 void SignIn::on_b_signup_clicked()
 {
-    emit go("userprof",{});
-}
+    emit go("userprof",{"silent"});
+ }
 void SignIn::on_b_signin_clicked()
 {
     emit go("accrec",{});

@@ -1,6 +1,7 @@
 #ifndef CREDENTIALS_H
 #define CREDENTIALS_H
-#include "globals.h"
+#include <QObject>
+#include <QJsonArray>
 #include "sqlapi.h"
 #include "downloaderStd.h"
 #include "permissions.h"
@@ -9,26 +10,25 @@ class Credentials : public QObject
 {
     Q_OBJECT
 public:
+    QJsonArray jfi,jfs,jtl,jv,jp,jfv;
     explicit Credentials(QObject *parent = nullptr);
     ~Credentials();
-    int curr_id;
-    QString curr_user;
-    QJsonDocument fvl;
+    int curr_id,context_id;
+    QString curr_user,context;
+    bool context_unlocked;
     bool update_loc();
-    sqlApi sql_api;
+    sqlApi sql_api,sql_gps;
     bool recov;
     int social_type;
-    QJsonDocument is_data(QList<QByteArray>);
     QByteArray is_raw_data(QList<QByteArray>);
-    QJsonDocument get_json_result();
-    bool set_user(QJsonDocument);
+    bool set_user(QJsonArray);
     QNetworkAccessManager* manager,*upmanager;
-    QJsonDocument jfi,jfs,jfm,gt;
     QJsonArray* titles;
     QFile* file;
 
     bool update_user_activity(QString);
-    void get_titles();
+    QJsonArray get_timeline();
+    void prepare_titles();
     bool check_signature();
     void make_dir(QString);
     QString s_curr_id,curr_pass,curr_join;
@@ -36,15 +36,14 @@ public:
     QString curr_phone="enter phone number";
     void update_user(QString,QString,QString,QString);
     int check_user(QString);
-    QJsonDocument get_fav_items(QString);
-    QJsonDocument get_fav_scenes(QString);
-    QJsonDocument get_fav_videos_list(bool);
-    QJsonDocument get_fav_videos();
-    QJsonDocument get_fav_items();
-    QJsonDocument get_fav_scenes();
+    QJsonArray get_fav_items(QString);
+    QJsonArray get_fav_scenes(QString);
+    QJsonArray get_fav_videos();
+    QJsonArray get_fav_items();
+    QJsonArray get_fav_scenes();
     QJsonDocument udc;
+    QJsonArray get_videos();
     QFuture<void> future;
-    void get_params();
     bool upload_file(QString);
     // API
     QString api_query,fav_table;
@@ -56,7 +55,6 @@ public:
     bool writeFile(QString,const QByteArray);
     bool create_file(QString,const QByteArray);
     QString lat,lon;
-    bool player_enabled;
     bool offline_m;
     bool recovery;
     int title_items[100],timeline_count_by_title_id[100];
@@ -66,7 +64,11 @@ public:
     void informat(QString);
     int videos_to_unmark;
     QByteArray get_jwt();
+    Prospect prospect_settings;
+
 private:
+    QJsonArray get_titles();
+    QJsonArray fetch_remote(bool sh=false);
     void get_remote_params();
     bool debg;
     int check_login(QString);
@@ -84,8 +86,8 @@ private:
     QString imgs[1000];
     int imgs_cnt;
     QList<QNetworkReply*> replies;
-    int geti(QJsonDocument,QString,int i=0);
-    QString gets(QJsonDocument,QString,int i=0);
+    int geti(QJsonArray,QString,int i=0);
+    QString gets(QJsonArray,QString,int i=0);
     int api_ind;
 signals:
     void check_carousel_displayed_fav(int,int);
@@ -106,7 +108,8 @@ signals:
     void got_favs();
     void downl_favs();
     void go_get_user_data();
-    void got_titles(QJsonArray);
+    void got_titles();
+    void got_producers(QJsonArray);
     //   void updater(QString,QString);
     void offline_mode(bool);
     void close_profsettings();
@@ -121,6 +124,7 @@ public slots:
     int pull_query(QUrl);
     void remove_from_favs(int,QString,QString);
     void get_favs(bool);
+    QJsonArray get_producers();
     void downloadProgress(qint64,qint64);
     void get_favs(QString,bool);
     QList<QByteArray> wait_and_get_reply(int);
@@ -130,8 +134,8 @@ public slots:
     void process();
     bool add_new_user();
     bool add_new_user(QString,QString,QString nick="",QString token="",int social=0);
-    void add_fav_item(int,QString,QString,QString,QString,int);
-    void add_fav_scene(int,QString,QString,QString,int);
+    void add_fav_item(int,QString,int,QString,QString,QString,int);
+    void add_fav_scene(int,QString,int,QString,QString,int);
     void add_fav_videos(int);
     void get_user_by_email(QString email);
     //    int get_user(QString,QString);

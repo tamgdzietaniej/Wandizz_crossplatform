@@ -59,7 +59,7 @@ void geofit::init(){
     perc_container_height=100;
     marg=0;
 }
-void geofit::update_geo(bool mode){
+QRect geofit::update_geo(bool mode){
 #if defined(Q_OS_IOS)
     m_geo=QApplication::primaryScreen()->geometry();
 #elif defined(Q_OS_ANDROID)

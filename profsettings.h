@@ -88,7 +88,7 @@ signals:
     void upd_user(QString,QString,QString,QString);
     void rec_user();
     void check_email_exists(QString,bool);
-    void go(QString);
+    void go(QString,QStringList);
     void remind_password(QString);
     void save_profile();
     void show_menu(QPoint);

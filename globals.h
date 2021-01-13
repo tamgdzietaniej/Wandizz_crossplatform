@@ -1,9 +1,9 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
-#include <QApplication>
+#include <QObject>
+#include <QGuiApplication>
 #include <QAudioRecorder>
 #include <QBitmap>
-#include <QtConcurrent/QtConcurrentRun>
 #include <QClipboard>
 #include <QColor>
 #include <QDebug>
@@ -39,6 +39,7 @@
 #include <QObject>
 #include <QOpenGLContext>
 #include <QOpenGLWidget>
+#include <QPaintDevice>
 #include <QPainter>
 #include <QPalette>
 #include <QParallelAnimationGroup>
@@ -53,21 +54,21 @@
 #include <QQuickView>
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
-#include <QScreen>
 #include <QStackedWidget>
 #include <QStandardPaths>
-#include <QThread>
 #include <QTimer>
 #include <QTimerEvent>
 #include <QTime>
 #include <QToolButton>
 #include <QUrl>
 #include <QVideoWidget>
+#include <QObject>
+#include <QWindow>
 #include "math.h"
-#include "geofit.h"
 #include "socialLogin.h"
 #include "downloaderStd.h"
 #include "permissions.h"
+
 /* ANDROID */
 #if defined(Q_OS_ANDROID)
 #include <QtAndroid>
@@ -79,6 +80,14 @@ static QString hash_dir=QStandardPaths::writableLocation(QStandardPaths::AppData
 #else
 static QString hash_dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/WANDIZZ";
 #endif
+class globals:public QObject{
+    Q_OBJECT
+public:
+    globals(QObject* parent=0);
+    static bool osd;
+
+};
+
 static int version=2348;
 static QString serverRoot="https://producer.wandizz.com";
 static QString update_url=serverRoot+"/apk/";
@@ -99,21 +108,24 @@ static QString f_user_id=hash_dir+"/user_id.info";
 static QString f_user_pass=hash_dir+"/user_id.info";
 static QString f_user_fav_s=hash_dir+"/user_fav_s.list";
 static QString f_user_fav_i=hash_dir+"/user_fav_i.list";
-static QString f_user_fav_m=hash_dir+"/user_fav_m.list";
+static QString f_user_fav_v=hash_dir+"/user_fav_m.list";
+static QString f_titles_ev_cnt=hash_dir+"/f_titles_ev_cnt.list";
 static QString f_user_fav_ml=hash_dir+"/user_fav_ml.list";
+static QString f_producers=hash_dir+"/producers.list";
 static QString f_user_avatar=hash_dir+"/avatar.png";
 static QString f_global_titles=hash_dir+"/titles_global.list";
 static QString d_carousel=hash_dir+"/carousel/";
 static QString d_recorder=hash_dir+"/recorder_file";
 static QString f_recorder=d_recorder+"/tmp";
 static QString d_posters=hash_dir+"/posters/";
+static QString d_logos=hash_dir+"/logos/";
 static QString f_poster_prefix="POSTER_";
 static QString d_frames="frames/";
 static QString d_media="media/";
 static QString button_ss="border:none;background:transparent;background-image:none;";
 static QString button_ss_act=button_ss+"color:rgb(120, 180, 255);";
 static QString button_ss_nact=button_ss+";color:rgb(80,117, 215);";
-static QString states[2]={button_ss_nact,button_ss_act};
+static QString states[2]={button_ss_act,button_ss_nact};
 static bool show_even_if_zero=true;
 static QString loginFBurl="https://producer.wandizz.com/authorize/facebook/index.php";
 static QString loginTWurl="https://producer.wandizz.com/api/twitter_login.php";
@@ -122,10 +134,11 @@ static QString f_videocut_filename="$fname.$from-$to";
 static bool offline=false;
 static int readers=0;
 static int max_readers=200;
-static int max_active=4;
+static int max_active=6;
+static int probe_interval=17;
+static int max_q=2;
 static int pmi;
 static int pms;
-
 struct FavsTable{
     int index;
     int db_index;
@@ -135,12 +148,40 @@ struct FavsTable{
     QString image;
     QString event;
 };
+struct STable{
+    int index;
+    int db_index;
+    QString param1;
+    QString title;
+    QString url;
+    QString image;
+    QString event;
+    QString type;
+    int oid;
+};
+struct Prospect{
+    bool prospect_osd;
+    int player_offset;
+    bool player_enabled;
+    bool prospect_favs;
+    bool prospect_shares;
+    bool menu_context_restrict;
+    bool prospect_initial_view;
+    int prospect_filter_chars;
+    bool prospect_sh_items;
+    bool prospect_sh_titles;
+    bool search_switch_with_top_bar;
+    double widget_height_factor;
+
+};
 static QList<FavsTable> favs_table;
+static QList<STable> sTable;
 
 //static QSize viewport=QApplication::primaryScreen()->virtualSize();
 #if defined (Q_OS_IOS)
 
 const QString pictures_dir=QStandardPaths::standardLocations((QStandardPaths::PicturesLocation)).last();
+const QString cache_dir=QStandardPaths::standardLocations((QStandardPaths::TempLocation)).last();
 #elif defined (Q_OS_ANDROID)
 const QString  pictures_dir=QStandardPaths::standardLocations((QStandardPaths::PicturesLocation)).first();
 #else

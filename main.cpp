@@ -1,19 +1,19 @@
 #include <navigation.h>
-
+#include <QApplication>
 int main(int argc, char *argv[])
 {
-   qSetMessagePattern("INNNERDEBUG: %{line}-%{function}-%{message}");
+    qSetMessagePattern("INNERDEBUG: %{line}-%{function}-%{message}");
 #if defined(Q_OS_IOS)
     QApplication::setAttribute(Qt::AA_DisableHighDpiScaling,true);
-    QApplication::setAttribute(Qt::AA_UseOpenGLES,true);
+  //  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
 #elif defined (Q_OS_ANDROID)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling,true);
     QApplication::setAttribute(Qt::AA_UseOpenGLES,true);
-   // QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    // QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 
-  //  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
     QApplication::setAttribute(Qt::ApplicationAttribute::AA_UseHighDpiPixmaps,true);
- /*
+    /*
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
@@ -29,12 +29,14 @@ int main(int argc, char *argv[])
 
    qDebug()<<"openGL ES:"<<format.majorVersion()<<format.minorVersion()<<format.renderableType()<<format<<QSurfaceFormat::defaultFormat();
    */
-        #endif
+#endif
+    QApplication::setAttribute(Qt::AA_UseOpenGLES,true);
+    QApplication::setAttribute(Qt::ApplicationAttribute::AA_UseHighDpiPixmaps,true);
     QApplication app(argc, argv);
     //  QApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
-   // QApplication::setApplicationVersion("6.0.0.0");
-   // QApplication::setApplicationName("WANDIZZ");
- //   QApplication::setApplicationDisplayName("WANDIZZ");
+    // QApplication::setApplicationVersion("6.0.0.0");
+    // QApplication::setApplicationName("WANDIZZ");
+    //   QApplication::setApplicationDisplayName("WANDIZZ");
 
     navigation controller;
 #if defined (Q_OS_MACX)

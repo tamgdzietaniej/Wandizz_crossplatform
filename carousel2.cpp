@@ -10,7 +10,7 @@ Carousel::Carousel(QWidget *parent) :
     render_video(false),
     corr_offset(0),
     old_pos(-1),
-    debg(true)
+    debg(false)
 {
     ui->setupUi(this);
     //  setAttribute(Qt::WA_NoSystemBackground,true);
@@ -40,6 +40,7 @@ void Carousel::set_sliders(){
     connect(sceneslider,SIGNAL(spin_friend(int)),this,SLOT(synchronize_item_to_scene(int)));
     connect(itemslider,SIGNAL(add_fav_click()),this,SLOT(add_fav_item_clicked()));
     connect(sceneslider,SIGNAL(add_fav_click()),this,SLOT(add_fav_scene_clicked()));
+    connect(this,SIGNAL(can_process()),this,SLOT(roll_scene()),Qt::QueuedConnection);
     //  connect(itemslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
     // connect(sceneslider,SIGNAL(stop_p()),sceneslider,SLOT(stop()));
 
@@ -57,12 +58,13 @@ void Carousel::reinit(){
 
 }
 
-void Carousel::set_params(QString tit,QString nf,const int offs_ms,int pl_offset,bool pla_en){
-    if(debg)qDebug()<<"CAROUSEL: SET PARAMS:"<<pl_offset;
+void Carousel::set_params(QString tit,int tid,QString nf,const int offs_ms,int pl_offset,bool pla_en){
+    if(debg)qDebug()<<"CAROUSEL: SET PARAMS:"<<pl_offset<<tid;
     title=tit;
     setTitle(title);
     paused_time=offs_ms;
     netfile=nf;
+    title_id=tid;
     sceneslider->player_offset=pl_offset;
     sceneslider->shplayer=pla_en;
     sceneslider->init_player(netfile);
@@ -200,10 +202,9 @@ void Carousel::parser(QNetworkReply* reply){
     wind=0;
     first_time=true;
     generate_widget();
-    emit can_process();
 }
 void Carousel::generate_widget(){
-    //   future = QtConcurrent::run([=]() {
+   future = QtConcurrent::run([=]() {
     for(int wind=0;wind<events_counter;wind++){
         if(exiting){
             if(debg)qDebug()<<"EXITING FUTURE";
@@ -222,7 +223,9 @@ void Carousel::generate_widget(){
             }
         }
     }
-    //  });
+    if(origin_pos<0)origin_pos=0;
+    emit can_process();
+    });
 }
 void Carousel::roll_scene(){
     if(first_time){
@@ -242,6 +245,7 @@ void Carousel::roll_scene(){
 }
 bool Carousel::roll_to(int rt,int target){
     bool r;
+    if(rt<0)rt=0;
     set_curr_data(rt);
     setTitle2(ev_data[rt].name);
     if(target==0){
@@ -340,7 +344,7 @@ void Carousel::add_fav_scene_clicked(){
     } else {
         if(debg)qDebug()<<"WAND:CAROUSEL:ADDING SCENE:"<<sceneslider->mw;
         fav_scenes_list.append(faced_scene_data.scene_id);
-        emit add_fav_scene(sid,curr_title,faced_scene_data.event,faced_scene_data.frame,faced_scene_data.etime);
+        emit add_fav_scene(sid,curr_title,title_id,faced_scene_data.event,faced_scene_data.frame,faced_scene_data.etime);
     }
     if(debg)qDebug()<<"WAND:CAROUSEL:ADD FAV SC CLICK AFTER";
 }
@@ -357,7 +361,7 @@ void Carousel::add_fav_item_clicked(){
     } else {
         if(debg)qDebug()<<"WAND:CAROUSEL:ADDING ITEM:"<<itemslider->mw<<fav_items_list;
         fav_items_list.append(faced_item_data.item_id);
-        emit add_fav_item(iid,curr_title,faced_item_data.event,faced_item_data.name,faced_item_data.image,faced_item_data.etime);
+        emit add_fav_item(iid,curr_title,title_id,faced_item_data.event,faced_item_data.name,faced_item_data.image,faced_item_data.etime);
     }
     if(debg)qDebug()<<"WAND:CAROUSEL:SET FAV:"<<itemslider->mw;
 }
@@ -379,18 +383,18 @@ void Carousel::on_b_options_released(){
     ui->b_options->setStyleSheet(old_ss);
 
 }
-void Carousel::set_fav_items_list(QJsonDocument doc){
-    int _cnt=doc.array().count();
+void Carousel::set_fav_items_list(QJsonArray doc){
+    int _cnt=doc.count();
     fav_items_list.clear();
     for(int i=0;i<_cnt;i++){
-        fav_items_list.append(doc.array().at(i).toObject().value("iid").toInt());
+        fav_items_list.append(doc.at(i).toObject().value("iid").toInt());
     }
 }
-void Carousel::set_fav_scenes_list(QJsonDocument doc){
-    int _cnt=doc.array().count();
+void Carousel::set_fav_scenes_list(QJsonArray doc){
+    int _cnt=doc.count();
     fav_scenes_list.clear();
     for(int i=0;i<_cnt;i++){
-        fav_scenes_list.append(doc.array().at(i).toObject().value("sid").toInt());
+        fav_scenes_list.append(doc.at(i).toObject().value("sid").toInt());
     }
 
 }
@@ -421,14 +425,12 @@ void Carousel::perform_close(){
 Carousel::~Carousel(){
     //   if(debg)qDebug()<<"WAND:CAROUSEL:destruktor CAROUSEL";
     exiting=true;
-    if(future.isRunning()){
-        if(debg)qDebug()<<"CLOSING CAROUSEL FUTURE:";
         future.waitForFinished();
-        if(debg)qDebug()<<"CAR FIt:ok:";
-    }
     delete ui;
 }
 void Carousel::on_duration_sliderPressed(){
+    qDebug()<<"Destructor carousel";
+    future.waitForFinished();
     slider_pressed=true;
 }
 

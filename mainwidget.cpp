@@ -9,7 +9,6 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     shwd=false;
     scrolling=false;
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
-    // setAttribute(Qt::WA_TranslucentBackground,true);
     setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     setMouseTracking(true);
     prev_buffer2=-1;

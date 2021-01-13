@@ -1,51 +1,87 @@
 #include "widget_wrapper.h"
-widget_wrapper::widget_wrapper(QWidget *parent) : QOpenGLWidget(parent){
+#define G_N_ELEMENTS(arr) ((sizeof(arr))/(sizeof(arr[0])))
+widget_wrapper::widget_wrapper(QWidget *parent,QString cname) : QOpenGLWidget(parent),selectors_visible(false),
+    ready_to_paint(false),show_search(false),type(cname),selectors_visible_prev(false){
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
+    setAttribute(Qt::WA_DeleteOnClose,true);
+    //  setAttribute(Qt::WA_TranslucentBackground);
     setMouseTracking(true);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
-    setObjectName("container");
-    dpi=devicePixelRatio();
-    ready_to_paint=false;
-//    timer=new QTimer(this);
- //   connect(timer,SIGNAL(timeout()),this,SLOT(check_timer()));
-    favs_cnt=0;
-    selectors_visible=false;
-    to_selectors_visible=false;
-    nick="";
-    frame_pos_setted=false;
-    label="";
+    dpi = devicePixelRatio();
+#if defined (Q_OS_IOS)
+    dpi*=2;
+#endif
     star.load(":/gui/ICONS_FAVS/green_star.png");
     star.setDevicePixelRatio(dpi*2);
-    marker=new QOpenGLWidget(this);
-    marker->setGeometry(0,0,0,0);
+    setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
 }
 void widget_wrapper::initializeGL(){
-    glClearColor(0,0,0,0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+    f->glClearColor(0,0,0,0);
 }
 bool widget_wrapper::get_hover(QPoint pos){
+    mpos=pos;
     if(!ready_to_paint){
         qDebug()<<objectName()<<"not ready";
         return false;
     }
-    QList<QPushButton*> wl=midFrame->findChildren<QPushButton *>();
-    if(wl.count()==0)qDebug()<<"WL0";
-    if(wl.count()>0){
-        for(int i=0;i<wl.count();i++){
-            if(wl.at(i)->rect().contains(wl.at(i)->mapFromGlobal(pos)) && wl.at(i)->isEnabled()){
-                wl.at(i)->click();
-                return wl.at(i)->isEnabled();
+    if(edit && show_search){
+        if(clicked(edit)){
+            if(!input->isVisible()){
+                input->setVisible(true);
+            }
+            return false;
+        }
+        for(int j=0;j<3;j++){
+            for(int i=0;i<wlist.at(j).count();i++){
+                QList<QPushButton*> bl = wlist.at(j).at(i)->findChildren<QPushButton *>(QString(),Qt::FindChildOptions(Qt::FindChildrenRecursively));
+                if(bl.count()>0){
+                    for(int k=0;k<bl.count();k++){
+                        if(clicked(bl.at(k))){
+                            return false;
+                        }
+                    }
+                }
             }
         }
+    }
+}
+bool widget_wrapper::clicked(QWidget* w){
+    if(w->rect().contains(w->mapFromGlobal(mpos))){
+        if(QString::fromLatin1(w->metaObject()->className())=="QPushButton"){
+            if(w->isEnabled()){
+                static_cast<QPushButton*>(w)->click();
+            }
+        }
+        if(QString::fromLatin1(w->metaObject()->className())=="QLineEdit"){
+            if(w->isEnabled()){
+                static_cast<QLineEdit*>(w)->setFocus();
+            }
+        }
+        return true;
     }
     return false;
 }
 void widget_wrapper::showSearch(bool sh){
-    edit->setVisible(sh);
-    edit->setEnabled(sh);
-    edit->setFocus();
-    edit->grabKeyboard();
-    update();
+    if(sh)showSearch();
+    else hideSearch();
+}
+void widget_wrapper::showSearch(){
+    if(edit==nullptr){
+        qDebug()<<"NO EDIT CREATED!!!!!!";
+        return;
+    }
+    show_search=true;
+    set_edit();
+  if(!edit->isEnabled())edit->setEnabled(true);
+    if(!edit->hasFocus())edit->setFocus();
+    edit->update();
+}
+void widget_wrapper::hideSearch(){
+    if(edit){
+        if(edit->keyboardGrabber())
+            edit->releaseKeyboard();
+    }
 }
 void widget_wrapper::showSelectors(bool s){
     if(selectors_visible!=s){
@@ -53,90 +89,87 @@ void widget_wrapper::showSelectors(bool s){
         update();
     }
 }
-void widget_wrapper::set_container(QRect sr,QRect cr,QRect lr,QRect nr){
-    cntr=cr;
-    labr=lr;
-    nicr=nr;
-    cntrw=cr;
-    labrw=lr;
-    nicrw=nr;
-    starrect=sr;
-    edit=new QLineEdit(this);
+void widget_wrapper::make_edit(){
+    if(!edit){
+        qDebug()<<"AETTING EDIT";
+        edit=new QLineEdit(this);
+        set_edit();
+    }
     edit->setGeometry(width()/10,height()/10,width()*.8,height()/10);
     edit->setFixedSize(width()*.8,height()/20);
-    edit->setAttribute(Qt::WA_AlwaysStackOnTop);
     edit->setStyleSheet("border:black;color:rgba(255,255,255,255);background:rgba(0,0,0,20);");
+    enableSearch();
+}
+void widget_wrapper::set_edit(){
     edit->setAlignment(Qt::AlignCenter);
-    edit->setInputMethodHints(Qt::ImhLowercaseOnly | Qt::ImhNoTextHandles | Qt::InputMethodHint::ImhNoAutoUppercase);
-    // edit->show();
-    qDebug()<<"EDIT:"<<edit->geometry();
-    connect(edit,SIGNAL(textChanged(const QString&)),this,SLOT(on_text_changed(const QString&)));
+    edit->setInputMethodHints(Qt::ImhLowercaseOnly | Qt::ImhNoTextHandles | Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText);
+    connect(edit,SIGNAL(textChanged(const QString&)),this,SIGNAL(textChanged(const QString&)));
+    connect(edit,SIGNAL(textChanged(const QString&)),this,SLOT(update()));
+    edit->setFocus();
 }
-void widget_wrapper::on_text_changed(const QString &arg1)
-{
-    qDebug()<<"TEXT:"<<arg1;
-    text=arg1;
+void widget_wrapper::setupWrapper(QList<QList<QWidget*>> wdl){
+    wlist.clear();
+    wlist.append(wdl);
+    for(int j=0;j<wdl.count();j++){
+        for(int i=0;i<wlist.at(j).count();i++){
+            QPoint tpos(wlist.at(j).at(i)->mapToGlobal(QPoint(0,0)));
+            if(j==1 || j==2)
+                wlist.at(j).at(i)->setParent(this);
+            wlist.at(j).at(i)->move(tpos);
+            update();
+            QList<QLineEdit*> elist=wlist.at(j).at(i)->findChildren<QLineEdit *>(QString(),Qt::FindChildOptions(Qt::FindChildrenRecursively));
+            if(elist.count() && edit==nullptr)
+                if(QString::fromLatin1(elist.at(0)->metaObject()->className())=="QLineEdit"){
+                    edit=static_cast<QLineEdit *>(elist.at(0));
+                    qDebug()<<"EDIT:"<<edit;
+                }
+        }
+    }
+    ready_to_paint=true;
+    if(!isVisible()){
+        qDebug()<<"SHOW CONTAINER";
+        show();
+    }
     update();
-    emit filter(text);
+    QApplication::processEvents();
 }
-void widget_wrapper::set_styles(QLabel* clab,QLabel* llab,QLabel* nlab){
-    cfont=clab->font();
-    lfont=llab->font();
-    nfont=nlab->font();
+void widget_wrapper::enableSearch(){
+    issrch=true;
+    showSearch(true);
 }
-void widget_wrapper::set_labels(QString lm, QString ln){
-    label=lm;
-    nick=ln;
-   update();
+void widget_wrapper::disableSearch(){
+    issrch=false;
+    QApplication::inputMethod()->hide();
 }
-void widget_wrapper::update_container(int c){
-    if(c!=-1){
-        favs_cnt=c;
-    } else favs_cnt=0;
-    update();
+bool widget_wrapper::is_search(){
+    return (edit!=nullptr)*issrch;
 }
 void widget_wrapper::resizeEvent(QResizeEvent *e){
     resizeGL(e->size().width(),e->size().height());
 }
-void widget_wrapper::setFrame(QWidget *mid_frame){
-    midFrame=static_cast<QWidget*>(mid_frame);
-    mid_frame->hide();
-    QPoint sp=midFrame->mapToGlobal(QPoint(0,0));
-    if(!frame_pos_setted)
-        mpos=mapFromGlobal(sp);
-    frame_pos_setted=true;
-    ready_to_paint=true;
-    update();
-}
 void widget_wrapper::paintGL(){
     if(ready_to_paint){
-        moved=marker->y()*2;
+        QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+        f->glClear(GL_COLOR_BUFFER_BIT);
         QPainter painter(this);
-        painter.beginNativePainting();
-        glClearColor(0,0,0,0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        painter.endNativePainting();
-        painter.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing | QPainter::Qt4CompatiblePainting);
-        painter.setFont(cfont);      
-        painter.setPen(QPen(QColor(39, 217, 255, 255)));
-        painter.drawPixmap(starrect.adjusted(0,moved/2,0,moved/2),star);
-        painter.drawText(cntrw.adjusted(0,moved,0,0),Qt::AlignCenter,QString::number(favs_cnt));
-        painter.setFont(lfont);
-        painter.setPen(QColor(255,255,255,255));
-        painter.drawText(labrw.adjusted(0,moved,0,0),Qt::AlignCenter,label);
-        painter.setFont(nfont);
-        painter.drawText(nicrw.adjusted(0,moved,0,0),Qt::AlignCenter,nick);
-        if(edit->isVisible()){
-            edit->render(&painter,edit->pos());
-            qDebug()<<"EDIT ENABLED";
+        //   painter.setRenderHints(QPainter::HighQualityAntialiasing,QPainter::SmoothPixmapTransform);
+        for(int j=0;j<wlist.count();j++){
+            if((!selectors_visible && j==0) || (selectors_visible && j==3) || (!selectors_visible && j==2)){
+                continue;
+            }
+            for(int i=0;i<wlist.at(j).count();i++){
+                QWidget* w=wlist.at(j).at(i);
+                if(w->isEnabled()){
+                    if(rect().intersects(QRect(w->pos(),w->size()))){
+                        w->render(&painter,w->pos(),w->visibleRegion(),RenderFlags(DrawChildren | DrawWindowBackground));
+                    }
+                }
+            }
         }
-        if(selectors_visible)
-            midFrame->render(&painter,mpos+QPoint(0,moved / 2));
         painter.end();
-    }
-}
-void widget_wrapper::updateFrameSet(){
-    midFrame->move(mpos+QPoint(0,moved/2));
+    } else
+        qDebug()<<"Container not ready";
 }
 widget_wrapper::~widget_wrapper(){
+    qDebug()<<"DESTROYER:WWRAP";
 }

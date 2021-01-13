@@ -1,5 +1,6 @@
-#ifndef DOWNLOADER_H
-#define DOWNLOADER_H
+/*
+#ifndef DOWNLOADER_KOPIA_H
+#define DOWNLOADER_KOPIA_H
 #include <QApplication>
 #include <QObject>
 #include <QNetworkAccessManager>
@@ -54,14 +55,15 @@ signals:
     void  need_revalidate_widget(int);
 public slots:
     void push_url(const QString&,const QString&);
-    void push_url(const QString&, const QString&, int,bool);
-  //  void run_watchdog();
+    void push_url(const QString&, const QString&, int);
+    void run_watchdog();
 private slots:
     void begin_download();
- //   void mid_process();
+    void mid_process();
 
 };
 
 
 
-#endif // DOWNLOADER_H
+#endif // DOWNLOADER_KOPIA_H
+*/

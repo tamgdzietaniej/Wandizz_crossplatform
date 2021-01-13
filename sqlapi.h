@@ -50,7 +50,7 @@ public:
     int apicnt;
     void send_query();
     void send_query(bool);
-    QUrl get_query();
+    QUrl get_query(bool sh=false);
 private:
     QNetworkAccessManager* manager;
     QString tables;

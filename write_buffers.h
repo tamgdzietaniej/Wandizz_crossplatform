@@ -15,9 +15,11 @@
 
 struct Task{
     int sys_id;
+    int widget_id;
     QString url;
     QByteArray reply;
     QFile file;
+    bool reval;
 };
 
 class write_buffers : public QObject
@@ -29,14 +31,20 @@ public:
     static QList<Task*> tasks,sent,done;
     int set_task();
     static int active;
-    bool busy;
+    bool busy,debg;
     int add_task(Task*);
+    void add_tasks(QList<Task*>);
+
+    int pcnt,npcnt;
+    QDateTime remote_stamp,local_stamp;
 signals:
     void stored();
     void process();
     void timerstart();
     void timerstop();
     void got_data();
+    void need_revalidate_widget(int);
+    void finished();
 
 public slots:
     void process_buffer();
