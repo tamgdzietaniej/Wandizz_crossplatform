@@ -8,19 +8,33 @@ class topMenuSwitcher : public QOpenGLWidget
 public:
     explicit topMenuSwitcher(QWidget *parent = nullptr,int dopacity=1);
     ~topMenuSwitcher() override;
-    void setFrames(QList<QWidget*> f1,QList<QWidget*> f2);
+    void setFrames(QWidget* f1,QWidget* f2);
     bool get_hover(QPoint);
     void showSelectors(bool);
     bool selector_visible;
-private:
-    int dpi;
-    bool noanim;
+    void forceUpdate();
     bool ready_to_paint;
-    QList<QWidget*> frames[2], currFrameSet;
+    void setSearchMode(bool);
+    void setupSearch();
+    QLineEdit* edit=nullptr;
+    bool isEdit,isEditEn;
+    Prospect* par;
+private:
+    QPointer<QFrame> sframe;
+    bool noanim;
+    QList<QWidget*> frames;
+    QWidget* currFrameSet;
+    QPushButton* b_search;
+    QRect sgeo;
+    bool cv;
 protected:
     void paintGL() override;
     void initializeGL() override;
     void resizeEvent(QResizeEvent *e) override;
+signals:
+    void textChanged(const QString&);
+private  slots:
+    void   cvtog();
 };
 
 #endif // TOPMENUSWITCHER_H

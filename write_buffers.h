@@ -34,9 +34,11 @@ public:
     bool busy,debg;
     int add_task(Task*);
     void add_tasks(QList<Task*>);
-
     int pcnt,npcnt;
     QDateTime remote_stamp,local_stamp;
+private:
+    QMutex _mutex;
+    int loaded,wrote,get_cnt;
 signals:
     void stored();
     void process();
@@ -53,8 +55,7 @@ public slots:
 
 private:
     QTimer* timer;
-    QThread thread;
-    int alldata,get_cnt,done_cnt,sysid;
+    int alldata,done_cnt,sysid;
 };
 
 #endif // WRITE_BUFFERS_H

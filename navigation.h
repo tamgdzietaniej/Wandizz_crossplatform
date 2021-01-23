@@ -35,7 +35,6 @@ public:
     QString carousel_title;
     QString s_curr_id,curr_user,curr_nick,curr_phone;
     QString url_to_load="";
-
     QStringList fav_scenes_list,fav_items_list,fav_videos_list;
     QString user_data="";
     bool msearch_in_action;
@@ -53,6 +52,7 @@ public:
     bool navlock();
     bool unlock();
     QString web_url;
+    QFrame* msrch;
     bool lock;
     QScreen* gs = QApplication::primaryScreen();
     bool fav_scenes_needs_reload,fav_items_need_reload;
@@ -89,7 +89,6 @@ public:
     QLinearGradient gradient,gradient2;
     bool debg;
     bool is_context();
-
 public slots:
     void set_labels();
     void init_app();
@@ -97,8 +96,6 @@ public slots:
     void share();
     void change_geo(const QRect& );
     void erase_module();
-    void set_favs();
-    void set_favs(QString);
     void check_email_exists(QString,bool);
     void save_profile();
     void toggle_input(bool);
@@ -114,26 +111,23 @@ public slots:
     void update_loc(QString,QString,QString);
     void proceed_gps();
     void proceed_wgen();
-
+    void disableCurrMenuEntry();
+    bool menuOpened();
 
     // CAROUSEL -> MENU
     //   void splash_upgrade();
     void set_credentials();
-    void show_waiter();
-    void hide_waiter();
     void show_web(QString);
 
 private slots:
-    void show_menu(QPoint);
-    void hide_menu();
+    void showMenu(QPoint);
+    void hideMenu();
     void setSocialData(QString,QString,QString,QString,QString);
     void rollin_carousel();
     void terminateCreds();
-    void get_favs(bool write=true);
     void remind_password(QString);
     void update_user(QString,QString,QString,QString);
     void get_current_user_data();
-    void delete_item(int,QString);
     void go_to(QString,QStringList params={});
     void navigate_upon_user_data();
     void recovery_user();
@@ -141,10 +135,12 @@ private slots:
     void show_carousel();
     void exit_app();
     void must_revalidate_widget(int);
-
+    void enableMenu();
+    void updateFavs();
 private:
+    bool isCWName(QString);
+    void implodeContent();
     QPointer<widgetGen> wgen=nullptr;
-
     bool silent;
     downloader* media_queue;
     void show_profsettings();

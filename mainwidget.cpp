@@ -8,14 +8,18 @@ MainWidget::MainWidget(int tp,QWidget *parent):
 {
     shwd=false;
     scrolling=false;
+    setAttribute(Qt::WA_NoSystemBackground);
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_DeleteOnClose,true);
+    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
     setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     setMouseTracking(true);
     prev_buffer2=-1;
+    lock=false;
     dpi=devicePixelRatio();
     if(debg)qDebug()<<"DPI"<<dpi;
     player_inited=false;
-    unblocking_facer=false;
     lw=-1;
     rw=-1;
     playing=false;
@@ -25,10 +29,9 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     buffer_load=-1;
     processing=0;
     shplayer=false;
-    debg=true;
+    debg=false;
     items=0;
     is_video_frame=false;
-    setting_face=false;
     updated=false;
     omw=-2;
     need_update=false;
@@ -68,7 +71,11 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     b_pause_image=QPixmap(":/gui/APP ICONS/pause.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
     b_volume_image[0]=QPixmap(":/gui/buttons/unmute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
     b_volume_image[1]=QPixmap(":/gui/buttons/mute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-
+    setAttribute(Qt::WA_AlwaysStackOnTop,true);
+    setAttribute(Qt::WA_DeleteOnClose,true);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 }
 
@@ -95,7 +102,7 @@ void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,Q
     prev_time=-1;
     par_idx=0;
     msize=siz;
-    img=QImage(":/gui/BANNERS/wandizz_trnsp.png").scaled(siz,Qt::KeepAspectRatio,Qt::SmoothTransformation);
+    img=QPixmap(":/gui/BANNERS/wandizz_trnsp.png").scaled(siz,Qt::KeepAspectRatio,Qt::SmoothTransformation);
     beg_h=msize.height();
     beg_y=mapToGlobal(QPoint(0,0)).y();
     button_rect.setRect(left_offset+msize.width()-30,msize.height()-30,25,25);
@@ -134,7 +141,10 @@ void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,Q
             widget[par_idx].loaded=1;
             if(objectName()=="sceneframe")
                 widget[par_idx].is_fav=favs.contains(ev_data[par_idx].scene_id);
-            else widget[par_idx].is_fav=favs.contains(ev_data[par_idx].item_id);
+            else {
+                qDebug()<<"CHECK:"<<ed[i].item_id<<ev_data[par_idx].item_id<<favs.contains(ev_data[par_idx].item_id);
+                                widget[par_idx].is_fav=favs.contains(ev_data[par_idx].item_id);
+            }
             last_created=par_idx;
             par_idx++;
             items=par_idx;
@@ -151,7 +161,8 @@ void MainWidget::set_favs(){
     }
 }
 void MainWidget::mouseMoveEvent(QMouseEvent *e){
-    if(items==0 || mw<0)return;
+    if(items==0 || mw<0)
+        return;
     if(!sscroling && !scroll_locked){
         if(abs(abs(pos.x())+abs(press_pos.x()))>5*dpi){
             sscroling=true;
@@ -169,6 +180,7 @@ void MainWidget::mouseMoveEvent(QMouseEvent *e){
         diffs.append(diff.x());
         if(diffs.count()>3)diffs.removeFirst();
         no_move=false;
+        if(debg)qDebug()<<"scr:"<<diffs;
     }
     if(!p_stop_emitted && !volume2_rect.contains(e->pos()) && !button2_rect.contains(e->pos()) && !play2_rect.contains(e->pos())){
         if(debg)qDebug()<<"P_STOP";
@@ -189,27 +201,19 @@ void MainWidget::close_video(){
 }
 void MainWidget::initializeGL(){
     glClearColor(1,1,1,type);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 void MainWidget::paintGL(){
-    if(!unblocking_facer){
-        unblocking_facer=true;
-        //     QTimer::singleShot(150,this,[=](){
-        setting_face=false;
-        unblocking_facer=false;
-        //  });
-    } else if(setting_face)if(debg)qDebug()<<"FACER BLOCKED";
     if(items==0)return;
     QPainter painter(this);
     painter.beginNativePainting();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     painter.endNativePainting();
     int offs=marker_left->geometry().right();
     QRect geo=QRect(mw*msize.width()+offs+left_offset,0,wsize.width(),wsize.height());
     for(int i=0;i<=last_created;i++){
         if(is_video_frame && i==mw ){
             if(!vim.isNull())
-                painter.drawImage(mw_geo.topLeft(),vim,widget[mw].image->rect());
+                painter.drawPixmap(mw_geo.topLeft(),vim,widget[mw].image->rect());
             else {
                 if(debg)qDebug()<<"NULL IMAGE!!";
                 is_video_frame=false;
@@ -234,40 +238,41 @@ void MainWidget::paintGL(){
                 }
                 int l=i*msize.width()+offs;
                 int r=(i+1)*msize.width()+offs;
-                painter.drawImage(geo.topLeft(),*widget[i].image,srect);
+                painter.drawPixmap(geo.topLeft(),*widget[i].image,srect);
                 painter.setBrush(QColor(0,0,0,255));
                 if(l>0 && l<width())painter.drawLine(l,0,l,height());
                 if(r>0 && r<width())painter.drawLine(r,0,r,height());
                 if(widget[i].loaded==2){
                     widget[i].loaded=3;
+                    qDebug()<<"Widget loaded:paint-loaded to 3";
                 }
             }
         }
     }
-    if( b_opacity ){
-        if( !type && player_inited ){
-            if(!player_enabled && !pressed){
-                painter.setPen(QPen(QColor(255,255,255,255)));
-                painter.setFont(QFont("Apple Gothic",8));
-                QString pinfo="Video not available";
-                if(player_url!="")
-                    pinfo="BUFFERING MEDIA:"+buff_perc;
-                painter.drawText(play_rect.center(),pinfo);
-            } else {
-                if(is_playing()){
-                    painter.drawPixmap(play_rect,b_pause_image,b_play_image[0].rect());
-                    painter.drawPixmap(volume_rect,b_volume_image[player->isMuted()],b_volume_image[0].rect());
-
-                }
-                else {
-                    painter.drawPixmap(play_rect,b_play_image[1],b_play_image[0].rect());
-                }
-
+    //  if( b_opacity ){
+    if( !type && player_inited ){
+        if(!player_enabled && !pressed){
+            painter.setPen(QPen(QColor(255,255,255,255)));
+            painter.setFont(QFont("Apple Gothic",8));
+            QString pinfo="Video not available";
+            if(player_url!="")
+                pinfo="BUFFERING MEDIA:"+buff_perc;
+            painter.drawText(play_rect.center(),pinfo);
+        } else {
+            if(is_playing()){
+                painter.drawPixmap(play_rect,b_pause_image,b_play_image[0].rect());
+                painter.drawPixmap(volume_rect,b_volume_image[player->isMuted()],b_volume_image[0].rect());
             }
+            else {
+                painter.drawPixmap(play_rect,b_play_image[1],b_play_image[0].rect());
+            }
+
         }
-        painter.drawPixmap(button_rect,b_fav_image[widget[mw].is_fav],b_fav_image[widget[mw].is_fav].rect());
     }
+    painter.drawPixmap(button_rect,b_fav_image[widget[mw].is_fav],b_fav_image[widget[mw].is_fav].rect());
+    //}
     painter.end();
+    need_update=false;
 }
 
 void MainWidget::mouseReleaseEvent(QMouseEvent *e){
@@ -300,10 +305,8 @@ void MainWidget::mouseReleaseEvent(QMouseEvent *e){
     sscroling=false;
 }
 void MainWidget::mousePressEvent(QMouseEvent *e){
-    if(!timer->isActive()){
-        if(dodebug)if(debg)qDebug()<<"TIMEREV:Start timer";
-        timer->start(17);
-    }
+    start_bg_proc();
+    if(dodebug)if(debg)qDebug()<<"TIMEREV:Start timer";
     if(items==0 || mw<0)return;
     if(mw==-1){
         if(dodebug)if(debg)qDebug()<<"MW=-1 return";
@@ -355,16 +358,13 @@ void MainWidget::mousePressEvent(QMouseEvent *e){
     diff.setX(0);
     diffs.clear();
 }
-void MainWidget::timerev(){
-    if(items==0)return;
-    if(!all_loaded){
-        total_loaded=0;
-        for(int i=0;i<items;i++){
-            if(widget[i].loaded>=2){
-                total_loaded++;
-            }
-        }
-        all_loaded=(total_loaded==items);
+void MainWidget::timerev(bool st){
+    if(scr!=0){
+        qDebug()<<"SCR:"<<scr;
+    }
+    if(items==0 || lock==true){
+        qDebug()<<"Items:0";
+        return;
     }
     get_coords();
     if(no_move)last_zeros++;
@@ -414,18 +414,21 @@ void MainWidget::timerev(){
             rotate_to_element=-1;
         }
         scr+=hscroll_autopilot;
+        //    if(scr!=0){
+        //      if(b_opacity!=0){
+        //          b_opacity=0;
+        //      }
     }
+    scrolling=abs(scr)>2;
     if(scr!=0){
-        if(b_opacity!=0){
-            b_opacity=0;
-        }
-        scrolling=abs(scr)>2;
+        if(debg)qDebug()<<"scroll:"<<scr;
         scroll(scr,0);
         seeked=false;
     } else {
         scrolling=false;
-        if(b_opacity!=1 && !pressed){
-            b_opacity=1;
+        //     if(b_opacity!=1 && !pressed){
+        if(!pressed){
+            //       b_opacity=1;
             needs_update();
             if( emited!=mw && !slave ){
                 emited=mw;
@@ -437,18 +440,19 @@ void MainWidget::timerev(){
             }
         }
     }
-    // if(debg)qDebug()<<"QQ"<<scr<<!pressed<<!need_seek<<!need_play<<all_loaded<<(rotate_to_element==-1);
-    if(scr==0 && !pressed && rotate_to_element==-1 && all_loaded && timer->isActive()){
-        if(dodebug)if(debg)qDebug()<<"TIMER STOP:TIMEREV";
-        timer->stop();
-    }
     scr=0;
     hscroll_autopilot=0;
     if(need_update){
-        need_update=false;
         update();
     }
-    //   });
+    if(st){
+        if(!timer->isActive())timer->start(17);
+    } else {
+        if(!need_update && scr==0 && !pressed && rotate_to_element==-1 && all_loaded && timer->isActive() && !scrolling){
+            if(dodebug)if(debg)qDebug()<<"TIMER STOP:TIMEREV";
+            timer->stop();
+        }
+    }
 }
 qreal MainWidget::get_trip_to(int tr){
     if(tr<0 || tr>last_created)return 0;
@@ -464,8 +468,7 @@ bool MainWidget::set_trip_to(int t){
     if(tr==mw || tr==rotate_to_element)return false;
     if(debg)qDebug()<<"type:"<<type<<" rolling:"<<t;
     rotate_to_element=tr;
-    if(!timer->isActive())
-        timer->start(17);
+    start_bg_proc();
     return true;
 }
 void MainWidget::get_coords(){
@@ -487,8 +490,8 @@ void MainWidget::get_coords(){
     if(mw<0)mw=0;
     if(lw<0)lw=0;
     if(rw<0)rw=0;
-    if(!setting_face && !all_loaded){
-        setting_face=true;
+    if(!all_loaded){
+        //      qDebug()<<"loading:all_loaded:"<<all_loaded<<total_loaded<<items<<last_created;
         if(++processing>last_created){
             processing=0;
             loop=true;
@@ -498,41 +501,45 @@ void MainWidget::get_coords(){
             genw=mw;
         else if(widget[processing].loaded<2)
             genw=processing;
-        if(genw>-1){
-         //   if(future.isFinished()){
-             //   qDebug()<<"!!!!! FUT";
-       //    QtConcurrent::run(this,&MainWidget::gen_widget,genw).waitForFinished();
-           // } else {
-           //     processing--;
-           //     qDebug()<<"Future:"<<future.isRunning();
-          //  }
-           gen_widget(genw);
-        } else setting_face=false;
-    }
-}
-void MainWidget::gen_widget(int genw){
-    if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
-    if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
-        widget[genw].loaded=2;
-        //    QImageReader imr(filename[genw]);
-        //           imr.setQuality(100);
-        //          imr.setBackgroundColor(QColor(255,255,255,255));
-        //         if(imr.canRead() && !imr.error())
-        //        widget[genw].image=new QImage(imr.read().scaled(msize,aspect,Qt::SmoothTransformation));
-        //       else qDebug()<<"ERROR READER:"<<filename[genw]<<imr.error()<<imr.errorString();;
-        QImage tmpimage(filename[genw]);
-        widget[genw].image=new QImage(tmpimage.scaled(msize,aspect,Qt::SmoothTransformation));
-        widget[genw].image->setDevicePixelRatio(dpi);
-        if(pdodebug)if(debg)qDebug()<<"Loaded image:"<<widget[genw].image->size()<<widget[genw].image->sizeInBytes()<<filename[genw]<<","<<genw;
-        needs_update();
-    }  else {
-        setting_face=false;
+        if(genw>-1 && !lock){
+            futures.append(QtConcurrent::run([=]() {
+                QMutexLocker {&_mutex};
+                if(all_loaded) return ;
+                if(debg)qDebug()<<"begin loaded:SETTING:"<<all_loaded<<items<<total_loaded<<genw;
+                if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
+                if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
+                    widget[genw].loaded=2;
+                    QPixmap tmpimage;
+                    tmpimage.load(filename[genw]);
+                    widget[genw].image=new QPixmap(tmpimage.scaled(msize,aspect,Qt::SmoothTransformation));
+                    widget[genw].image->setDevicePixelRatio(dpi);
+                    if(pdodebug)if(debg)qDebug()<<"Loaded image:"<<widget[genw].image->size()<<widget[genw].image->size()<<filename[genw]<<","<<genw;
+                    need_update=true;
+                    total_loaded++;
+                    all_loaded=(total_loaded==items);
+                    qDebug()<<"end:loaded:SETTING:"<<all_loaded<<items<<total_loaded<<genw;
+
+                }
+            }));
+            //   } else {
+            //    processing--;
+        }
     }
 }
 MainWidget::~MainWidget(){
+    lock=true;
+    timer->stop();
+    QApplication::processEvents();
     future.waitForFinished();
     if(debg)qDebug()<<"WAND:MAINWIDGET:DESTRuctor mainwidget";
     if(is_playing())player->stop();
+    int cn=0;
+    while(!futures.isEmpty()){
+        qDebug()<<"Waiting for future"<<cn;
+        QFuture<void> f=futures.takeFirst();
+        f.cancel();
+        f.waitForFinished();
+    }
 }
 
 /*  PLAYER SECTION */
@@ -593,8 +600,10 @@ void MainWidget::play(){
     //  video->setState(true);
     frames_cnt=0;
     player->play();
-    if(!timer->isActive())timer->start(17);
-
+    start_bg_proc();
+}
+void MainWidget::start_bg_proc(){
+    if(!timer->isActive())timerev(true);
 }
 void MainWidget::seek(qint64 curr_pos,bool){
     if(!player_enabled)return;
@@ -612,7 +621,6 @@ void MainWidget::seek(qint64 curr_pos,bool){
 }
 void MainWidget::stop(){
     if(!player_enabled){
-        if(debg)qDebug()<<"!!!!!!PLAYER:"<<player_inited<<player_enabled;
         return;
     }
     if(pdodebug)if(debg)qDebug()<<"Media PLAYER:TRIGGER STOP AT "<<player->position()<<player->state();
@@ -640,11 +648,10 @@ void MainWidget::setImage(const QImage& im,bool swrgb){
     frames_cnt++;
     if(first_frame){
         if(pdodebug)
-            if(debg)qDebug()<<"Media PLAYER:Transport START - IMG PARAMS:"<<im.sizeInBytes()<<","<<im.size()<<","<<im.depth();
+            if(debg)qDebug()<<"Media PLAYER:Transport START - IMG PARAMS:"<<im.size()<<","<<im.size()<<","<<im.depth();
         first_frame=false;
     }
-    vim=im.scaled(msize,Qt::IgnoreAspectRatio);
-    if(swrgb)vim = vim.rgbSwapped();
+    vim=QPixmap::fromImage(im.scaled(msize,Qt::IgnoreAspectRatio));
     if(player->position()>end_time || !is_playing() || catch_stop){
         if(catch_stop){
             if(pdodebug)if(debg)qDebug()<<"CATCH STOP LAST FRAME";
@@ -657,8 +664,8 @@ void MainWidget::setImage(const QImage& im,bool swrgb){
     needs_update();
 }
 void MainWidget::needs_update(){
-    if(timer->isActive())need_update=true;
-    else update();
+    need_update=true;
+    start_bg_proc();
 }
 void MainWidget::media_info(QMediaPlayer::MediaStatus s){
     if(pdodebug)if(debg)qDebug()<<"Media PLAYER STATUS:"<<s;

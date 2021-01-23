@@ -37,17 +37,19 @@ public:
     void aimParser();
     int hms2ms(QString);
     QList<int> fav_scenes_list,fav_items_list;
-    void set_fav_scenes_list(QJsonArray);
-    void set_fav_items_list(QJsonArray);
+    void set_fav_scenes_list(const QJsonArray*);
+    void set_fav_items_list(const QJsonArray*);
     QString curr_title,title,app_version_s;
     bool exiting=false;
     MainWidget* sceneslider;
     MainWidget* itemslider;
     void perform_close();
 private:
+    QMutex _mutex;
     Ui::Carousel *ui;
     geofit geo;
     int events_counter,origin_pos;
+    QFutureWatcher<void> watcher;
     QObjectList dn_list;
     QString ms2hms(int),last_event,old_ss;
     MainWidget::event_data ev_data[1000],car_data[100],faced_item_data,faced_scene_data;
@@ -92,7 +94,9 @@ private:
     void setCarouselScenes(bool);
     QPixmap videopix;
     bool player_enabled;
+    void closeWin();
 public slots :
+    void can_proc();
     //   void player_state_changed(QMediaPlayer::State);
     //  void media_buffer_filled_info(int);
     //   void media_info(QMediaPlayer::MediaStatus);
@@ -125,7 +129,8 @@ private slots:
     void on_duration_sliderPressed();
 
 protected:
-    void showEvent(QShowEvent*);
+    void showEvent(QShowEvent*) override;
+    void hideEvent(QHideEvent*) override;
 private:
     QFuture<void> future;
     void deb(QString);
@@ -144,9 +149,9 @@ signals:
     void offscreen_delete(int,QString);
     void offscreen_add(int,QString);
     void carousel_finish();
-    void add_fav_item(int,QString,int,QString,QString,QString,int);
-    void add_fav_scene(int,QString,int,QString,QString,int);
-    void delete_item(int,QString);
+    void add_fav_item(int);
+    void add_fav_scene(int);
+    void del_fav(const QString&,int);
     void go(QString,QStringList);
     void go_web(QString);
     void go_user_prof();

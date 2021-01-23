@@ -2,24 +2,29 @@
 #include "ui_carousel2.h"
 Carousel::Carousel(QWidget *parent) :
     QMainWindow (parent),
+    debg(false),
     ui(new Ui::Carousel),
+    events_counter(-1),
     is_online(true),
     loading(false),
-    events_counter(-1),
-    joinsliders(false),
     render_video(false),
+    joinsliders(false),
     corr_offset(0),
-    old_pos(-1),
-    debg(false)
+    old_pos(-1)
 {
-    ui->setupUi(this);
-    //  setAttribute(Qt::WA_NoSystemBackground,true);
-    //  setAttribute(WA_TransparentForMouseEvents,false);
-    setAttribute(Qt::WA_DeleteOnClose,true);
+    ui->setupUi(this); 
+    setAttribute( Qt::WA_AlwaysStackOnTop, true );
+    setAttribute( Qt::WA_NoSystemBackground, true);
+    setAttribute( Qt::WA_TranslucentBackground, true );
+    setAttribute( Qt::WA_DeleteOnClose, true );
+    setAttribute( Qt::WA_TransparentForMouseEvents, false );
+  //  setAttribute( Qt::WA_TransparentForMouseEvents, false );
     man=new QNetworkAccessManager(this);
     connect(man,SIGNAL(finished(QNetworkReply*)),this,SLOT(parser(QNetworkReply*)));
 }
+void Carousel::closeWin(){
 
+}
 void Carousel::set_sliders(){
     if(debg)qDebug()<<"mainwidget construct slider";
     sceneslider=new MainWidget(0,this);
@@ -194,6 +199,7 @@ void Carousel::parser(QNetworkReply* reply){
             }
         }
     }
+    qDebug()<<"CAROUSEL FAVS:"<<fav_items_list<<fav_scenes_list;
     itemslider->prepare(ev_data,events_counter,isize,netfile,fav_items_list);
     sceneslider->prepare(ev_data, events_counter,ssize,netfile,fav_scenes_list);
 
@@ -204,28 +210,40 @@ void Carousel::parser(QNetworkReply* reply){
     generate_widget();
 }
 void Carousel::generate_widget(){
-   future = QtConcurrent::run([=]() {
-    for(int wind=0;wind<events_counter;wind++){
-        if(exiting){
-            if(debg)qDebug()<<"EXITING FUTURE";
-            break;
-        }
-        if(!srequested.contains(ev_data[wind].scene_id)){
-            if(!QFileInfo::exists(ev_data[wind].frame_file)){
-                srequested.append(ev_data[wind].scene_id);
-                emit download(ev_data[wind].frame,ev_data[wind].frame_file);
+    future = QtConcurrent::run([=]() {
+        QMutexLocker {&_mutex};
+        for(int wind=0;wind<events_counter;wind++){
+            if(exiting){
+                if(debg)qDebug()<<"EXITING FUTURE";
+                break;
+            }
+            if(!srequested.contains(ev_data[wind].scene_id)){
+                if(!QFileInfo::exists(ev_data[wind].frame_file)){
+                    srequested.append(ev_data[wind].scene_id);
+                    emit download(ev_data[wind].frame,ev_data[wind].frame_file);
+                    qDebug()<<"DOWNLOAD1:"<<wind<<events_counter<<ev_data[wind].frame;
+
+                }
+            }
+            if(!irequested.contains(ev_data[wind].item_id)){
+                if(!QFileInfo::exists(ev_data[wind].item_file)){
+                    irequested.append(ev_data[wind].item_id);
+                    emit download(ev_data[wind].image,ev_data[wind].item_file);
+                    qDebug()<<"DOWNLOAD2:"<<wind<<events_counter<<ev_data[wind].image;
+                }
             }
         }
-        if(!irequested.contains(ev_data[wind].item_id)){
-            if(!QFileInfo::exists(ev_data[wind].item_file)){
-                irequested.append(ev_data[wind].item_id);
-                emit download(ev_data[wind].image,ev_data[wind].item_file);
-            }
-        }
-    }
-    if(origin_pos<0)origin_pos=0;
+        qDebug()<<"loaded:download i,s"<<irequested.count()<<srequested.count()<<irequested<<srequested;
+        if(origin_pos<0)origin_pos=0;
+       });
+    connect(&watcher, SIGNAL(finished()),this,SLOT(can_proc()),Qt::QueuedConnection);
+        watcher.setFuture(future);
+}
+void Carousel::can_proc(){
+    qDebug()<<"CAN PROCESS";
     emit can_process();
-    });
+watcher.future().cancel();
+
 }
 void Carousel::roll_scene(){
     if(first_time){
@@ -238,8 +256,8 @@ void Carousel::roll_scene(){
         sceneslider->get_coords();
         itemslider->get_coords();
         roll_to(origin_pos,0);
-        sceneslider->timer->start(17);
-        itemslider->timer->start(17);
+        sceneslider->start_bg_proc();
+        itemslider->start_bg_proc();
         ui->b_back->setEnabled(true);
     }
 }
@@ -340,11 +358,11 @@ void Carousel::add_fav_scene_clicked(){
     if(isfav){
         if(debg)qDebug()<<"WAND:CAROUSEL:DELETING SCENE:"<<sceneslider->mw;
         fav_scenes_list.removeAt(fav_scenes_list.indexOf(sid));
-        emit delete_item(sid,"fav_scenes");
+        emit del_fav("favscenes",sid);
     } else {
         if(debg)qDebug()<<"WAND:CAROUSEL:ADDING SCENE:"<<sceneslider->mw;
         fav_scenes_list.append(faced_scene_data.scene_id);
-        emit add_fav_scene(sid,curr_title,title_id,faced_scene_data.event,faced_scene_data.frame,faced_scene_data.etime);
+        emit add_fav_scene(sid);
     }
     if(debg)qDebug()<<"WAND:CAROUSEL:ADD FAV SC CLICK AFTER";
 }
@@ -357,11 +375,11 @@ void Carousel::add_fav_item_clicked(){
     if(isfav){
         if(debg)qDebug()<<"WAND:CAROUSEL:DELETING ITEM:"<<itemslider->mw<<fav_items_list;
         fav_items_list.removeAt(fav_items_list.indexOf(iid));
-        emit delete_item(faced_item_data.item_id,"fav_items");
+        emit del_fav("favitems",faced_item_data.item_id);
     } else {
         if(debg)qDebug()<<"WAND:CAROUSEL:ADDING ITEM:"<<itemslider->mw<<fav_items_list;
         fav_items_list.append(faced_item_data.item_id);
-        emit add_fav_item(iid,curr_title,title_id,faced_item_data.event,faced_item_data.name,faced_item_data.image,faced_item_data.etime);
+        emit add_fav_item(faced_item_data.item_id);
     }
     if(debg)qDebug()<<"WAND:CAROUSEL:SET FAV:"<<itemslider->mw;
 }
@@ -383,18 +401,21 @@ void Carousel::on_b_options_released(){
     ui->b_options->setStyleSheet(old_ss);
 
 }
-void Carousel::set_fav_items_list(QJsonArray doc){
-    int _cnt=doc.count();
+void Carousel::set_fav_items_list(const QJsonArray* doc){
+    qDebug()<<"FAV ITEMS:"<<doc;
+    int _cnt=doc->count();
     fav_items_list.clear();
     for(int i=0;i<_cnt;i++){
-        fav_items_list.append(doc.at(i).toObject().value("iid").toInt());
+        qDebug()<<"CAR FAV:"<<(doc->at(i).toObject().value("fav_id").toString().toInt());
+        fav_items_list.append(doc->at(i).toObject().value("fav_id").toString().toInt());
     }
 }
-void Carousel::set_fav_scenes_list(QJsonArray doc){
-    int _cnt=doc.count();
+void Carousel::set_fav_scenes_list(const QJsonArray* doc){
+       qDebug()<<"FAV SCENES:"<<doc;
+    int _cnt=doc->count();
     fav_scenes_list.clear();
     for(int i=0;i<_cnt;i++){
-        fav_scenes_list.append(doc.at(i).toObject().value("sid").toInt());
+        fav_scenes_list.append(doc->at(i).toObject().value("fav_id").toString().toInt());
     }
 
 }
@@ -407,16 +428,25 @@ void Carousel::set_item_fav(int i){
 bool Carousel::is_scene_fav(int i=-1){
     if(i==-1)i=sceneslider->mw;
     int si=sceneslider->ev_data[i].scene_id;
-    return fav_scenes_list.contains(si);
+    qDebug()<<"CHECK SCENE"<<si<<ev_data[i].scene_id;
+       return fav_scenes_list.contains(si);
 }
 bool Carousel::is_item_fav(int i=-1){
     if(i==-1)i=itemslider->mw;
     if(debg)qDebug()<<"WAND:CAROUSEL:CHECK IF ITEM FAV:"<<fav_items_list<<"-----------"<<itemslider->ev_data[i].item_id<<fav_items_list.contains(itemslider->ev_data[i].item_id);
+    qDebug()<<"FAVITS:"<<fav_items_list;
     return fav_items_list.contains(itemslider->ev_data[i].item_id);
 }
 void Carousel::showEvent(QShowEvent* e){
     setDisabled(false);
     e->accept();
+}
+void Carousel::hideEvent(QHideEvent* e){
+    sceneslider->lock=true;
+    itemslider->lock=true;
+    sceneslider->timer->stop();
+    itemslider->timer->stop();
+
 }
 void Carousel::perform_close(){
     sceneslider->perform_close();
@@ -425,7 +455,7 @@ void Carousel::perform_close(){
 Carousel::~Carousel(){
     //   if(debg)qDebug()<<"WAND:CAROUSEL:destruktor CAROUSEL";
     exiting=true;
-        future.waitForFinished();
+    watcher.waitForFinished();
     delete ui;
 }
 void Carousel::on_duration_sliderPressed(){

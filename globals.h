@@ -88,7 +88,8 @@ public:
 
 };
 
-static int version=2348;
+static QString version="4.3.5.95";
+static QString no_data_string="sorry, bu i haven't got any infrmation about it :(";
 static QString serverRoot="https://producer.wandizz.com";
 static QString update_url=serverRoot+"/apk/";
 static QString chk_update_url = update_url+"version.info";
@@ -122,6 +123,7 @@ static QString d_logos=hash_dir+"/logos/";
 static QString f_poster_prefix="POSTER_";
 static QString d_frames="frames/";
 static QString d_media="media/";
+static QString f_timeline="timeline/";
 static QString button_ss="border:none;background:transparent;background-image:none;";
 static QString button_ss_act=button_ss+"color:rgb(120, 180, 255);";
 static QString button_ss_nact=button_ss+";color:rgb(80,117, 215);";
@@ -170,10 +172,22 @@ struct Prospect{
     int prospect_filter_chars;
     bool prospect_sh_items;
     bool prospect_sh_titles;
+    bool search_mag_glass;
     bool search_switch_with_top_bar;
     double widget_height_factor;
-
+    QString videos_coming_soon_text;
+    int videos_coming_soon_text_size;
+    int videos_coming_soon_picture_dim;
+    QString search_text_color;
+    QString search_field_color;
+    QString search_text_placeholder;
+    int search_height_factor;
 };
+enum vP{
+    OVER= 0,
+    UNDER=1
+};
+
 static QList<FavsTable> favs_table;
 static QList<STable> sTable;
 

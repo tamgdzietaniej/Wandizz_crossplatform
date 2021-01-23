@@ -16,28 +16,39 @@ public:
     qreal op_sc;
     void revalidate();
     qreal rcol=0;
+    QString event_to_share;
+    void setIndex(int);
     bool fresh_run;
     QFuture<void> future;
     bool isLocked();
+    void lock();
+    void unlock();
+    bool isProducerType();
     bool isProducer();
+    bool isVideosType();
+    bool isVideos();
+    bool isFItems();
+    bool isFVideos();
+    bool isFScenes();
     void show_top_widget();
-    void set_params(int index,int db_index,int items_cnt,int title_id,QString poster_file,QString poster_url,QString txt_up,QString txt_dn,QString mediafile="",int oid=-1);
+    void set_params(int index,int db_index,int items_cnt,int title_id,QString poster_file,QString poster_url,QString txt_up,QString txt_dn,QImage&,QString mediafile="",int oid=-1);
     void set_items();
     void set_alignment();
     bool mask=false,hiding;
-    QPixmap* limage=nullptr;
+    QImage* limage=nullptr;
+    QImage* timage=nullptr;
     QString filename,fileurl;
     int title_id,oid;
     bool loaded;
     QPixmap *fav[2],*sha_pix=nullptr;
     int offs;
+    void setSilent(int,const QString&,const QString&);
     bool is_poster,debg;
     QString type;
     int items_cnt;
-    void setContext(const QString&);
     QOpenGLWidget* mfy;
     QTimer timer;
-bool need_switch,need_hide,need_update;
+    bool need_update;
     bool chkOffset();
     QString netfile;
     void setDPI(int);
@@ -47,37 +58,31 @@ bool need_switch,need_hide,need_update;
     void setOpacity(qreal o=1);
     int db_index=-1,pixw;
     //  qreal px,py,pw,ph;
-    bool fav_toggled=false;
+    int fav_toggled;
     QRect add_fav_rect;
     QString tim_text,txt_text;
     bool event_owner=false,locked;
     void set_prospect_params(Prospect&);
     void catch_event();
     int dpi;
-    void lock(bool h=true);
-    void unlock();
-    void paint(QPainter *painter);
-private:
     QString ctype;
+    bool toggle_fav(bool sql);
+    void forceUpdate();
+private:
     Prospect* par;
     bool sent1,sent2;
     QSizePolicy size_policy;
-    void map_items();
-    bool pressed=false;
+    bool pressed;
     int pos,prev_pos,press_pos;
-    bool need_show,anim_active;
+    bool anim_active;
     int diff;
-    int stim=400;
-    bool final_poster;
+
 public slots:
-    bool toggle_fav();
     void check_timer();
-    void mark_fav_videos(bool);
-    void unmark_fav_videos(bool);
-    void settle_poster(QPixmap*,bool);
-    void toggle(bool);
+    void settle_poster(const QImage*);
 
 protected:
+    void initializeGL() override;
     void paintGL() override;
     void mousePressEvent(QMouseEvent*) override;
     void mouseReleaseEvent(QMouseEvent*) override;
@@ -85,6 +90,7 @@ protected:
     void leaveEvent(QEvent*) override;
     void resizeEvent(QResizeEvent *e) override;
     void hideEvent(QHideEvent* e) override;
+    void showEvent(QShowEvent* e) override;
 
 signals:
     void shown();
@@ -92,16 +98,14 @@ signals:
     void ready_to_switch(int);
     void mouse_move(QPoint,int);
     void entered(int,int,int);
-    void click_delete(int);
     void click(int,int);
-    void add_fav_videos(int);
-    void del_fav_videos(int,QString);
+    void toggle_fav_video(int,bool);
+    void del_fav(const QString&,int);
     void download(const QString&,const QString&,const int,bool);
     void leaved();
     void hided();
-    void get_poster(int,bool,const QString&,const QString&,const QString&,const QString&,const QString&,int);
-    void settled();
+    void get_poster(int,const QString&,const QString&,const QString&,const QString&,const QString&,int);
+    void settled(int);
     void chk_timer();
-    void brick_hidden_done(int);
 };
 #endif // GLLABEL_H

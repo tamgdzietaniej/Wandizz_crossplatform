@@ -10,7 +10,7 @@ class Credentials : public QObject
 {
     Q_OBJECT
 public:
-    QJsonArray jfi,jfs,jtl,jv,jp,jfv;
+    QJsonArray jfi,jfs,jtit,jtl,jp,jfv,jtc;
     explicit Credentials(QObject *parent = nullptr);
     ~Credentials();
     int curr_id,context_id;
@@ -23,11 +23,11 @@ public:
     QByteArray is_raw_data(QList<QByteArray>);
     bool set_user(QJsonArray);
     QNetworkAccessManager* manager,*upmanager;
-    QJsonArray* titles;
     QFile* file;
-
+    void updateFileCache(const QJsonArray&,const QString&, bool w=true);
+    QJsonArray getFromFileCache(const QString&);
     bool update_user_activity(QString);
-    QJsonArray get_timeline();
+    QJsonArray get_timeline(),getEachTitleContentCounter();
     void prepare_titles();
     bool check_signature();
     void make_dir(QString);
@@ -36,6 +36,7 @@ public:
     QString curr_phone="enter phone number";
     void update_user(QString,QString,QString,QString);
     int check_user(QString);
+
     QJsonArray get_fav_items(QString);
     QJsonArray get_fav_scenes(QString);
     QJsonArray get_fav_videos();
@@ -108,7 +109,6 @@ signals:
     void got_favs();
     void downl_favs();
     void go_get_user_data();
-    void got_titles();
     void got_producers(QJsonArray);
     //   void updater(QString,QString);
     void offline_mode(bool);
@@ -117,13 +117,25 @@ signals:
     void finished();
 
 public slots:
+    void add_fav_item(int);
+    void add_fav_scene(int);
+    void add_fav_video(int);
+    void del_fav_item(int);
+    void del_fav_scene(int);
+    void del_fav_video(int);
+    void add_fav(const QString&,int);
+    void del_fav(const QString&,int);
+
     QPixmap circlePix(QPixmap);
     QList<QByteArray> get_reply(int);
     int make_request(QString);
+    void toggle_fav_video(int,bool);
+    void toggle_fav_scene(int,bool);
+    void toggle_fav_item(int,bool);
     void collect_replies(QNetworkReply*);
     int pull_query(QUrl);
-    void remove_from_favs(int,QString,QString);
     void get_favs(bool);
+    void get_stats(bool);
     QJsonArray get_producers();
     void downloadProgress(qint64,qint64);
     void get_favs(QString,bool);
@@ -134,13 +146,11 @@ public slots:
     void process();
     bool add_new_user();
     bool add_new_user(QString,QString,QString nick="",QString token="",int social=0);
-    void add_fav_item(int,QString,int,QString,QString,QString,int);
-    void add_fav_scene(int,QString,int,QString,QString,int);
-    void add_fav_videos(int);
     void get_user_by_email(QString email);
     //    int get_user(QString,QString);
     //   bool check_update();
 
 };
-void videos_added();
+
+
 #endif // CREDENTIALS_H

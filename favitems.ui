@@ -3533,6 +3533,40 @@ background:qlineargradient(spread:reflect, x1:0, y1:0, x2:0, y2:1, stop:0 rgba(4
       <bool>true</bool>
      </property>
     </widget>
+    <widget class="QLabel" name="lab_nick">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>60</y>
+       <width>400</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Apple SD Gothic Neo</family>
+       <pointsize>20</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
+       <stylestrategy>PreferAntialias</stylestrategy>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">border-image:none;background:transparent;color:White;</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </widget>
    <widget class="QLabel" name="lab_info_videos">
     <property name="geometry">
@@ -3875,40 +3909,6 @@ color:rgb(39, 217, 255);
      <string>0</string>
     </property>
    </widget>
-   <widget class="QLabel" name="lab_nick">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>99</y>
-      <width>400</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="font">
-     <font>
-      <family>Apple SD Gothic Neo</family>
-      <pointsize>20</pointsize>
-      <weight>50</weight>
-      <bold>false</bold>
-      <stylestrategy>PreferAntialias</stylestrategy>
-     </font>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">border-image:none;background:transparent;color:White;</string>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignCenter</set>
-    </property>
-   </widget>
    <widget class="QLabel" name="lab_favs_icon">
     <property name="geometry">
      <rect>
@@ -4033,6 +4033,26 @@ color:#fff;</string>
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QWidget" name="widget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>260</y>
+      <width>299</width>
+      <height>78</height>
+     </rect>
+    </property>
+   </widget>
+   <zorder>frame</zorder>
+   <zorder>switch_b_frame_top</zorder>
+   <zorder>lab_info_videos</zorder>
+   <zorder>lab_info_scenes</zorder>
+   <zorder>favs_cnt</zorder>
+   <zorder>lab_favs_icon</zorder>
+   <zorder>lab_info_items</zorder>
+   <zorder>lab_info_res</zorder>
+   <zorder>switch_b_frame</zorder>
+   <zorder>widget</zorder>
   </widget>
   <action name="actionOptions">
    <property name="text">

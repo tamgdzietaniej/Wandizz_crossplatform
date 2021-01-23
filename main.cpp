@@ -5,32 +5,28 @@ int main(int argc, char *argv[])
     qSetMessagePattern("INNERDEBUG: %{line}-%{function}-%{message}");
 #if defined(Q_OS_IOS)
     QApplication::setAttribute(Qt::AA_DisableHighDpiScaling,true);
-  //  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
-#elif defined (Q_OS_ANDROID)
+ #elif defined (Q_OS_ANDROID)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling,true);
-    QApplication::setAttribute(Qt::AA_UseOpenGLES,true);
-    // QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-
-    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
-    QApplication::setAttribute(Qt::ApplicationAttribute::AA_UseHighDpiPixmaps,true);
-    /*
+  #endif
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
     format.setStencilBufferSize(8);
     format.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     format.setSwapInterval(17);
     format.setAlphaBufferSize(8);
-    format.setProfile(QSurfaceFormat::OpenGLContextProfile::CompatibilityProfile);
-    format.setMajorVersion(3);
-    format.setMinorVersion(0);
+    format.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
+    format.setMajorVersion(2);
+    format.setMinorVersion(4);
     format.setRenderableType(QSurfaceFormat::RenderableType::OpenGLES);
     QSurfaceFormat::setDefaultFormat(format);
 
+        QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
 
    qDebug()<<"openGL ES:"<<format.majorVersion()<<format.minorVersion()<<format.renderableType()<<format<<QSurfaceFormat::defaultFormat();
-   */
-#endif
+
+
     QApplication::setAttribute(Qt::AA_UseOpenGLES,true);
+  //   QApplication::setAttribute(Qt::AA_ShareOpenGLContexts,true);
     QApplication::setAttribute(Qt::ApplicationAttribute::AA_UseHighDpiPixmaps,true);
     QApplication app(argc, argv);
     //  QApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);

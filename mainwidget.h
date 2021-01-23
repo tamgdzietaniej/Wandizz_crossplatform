@@ -39,8 +39,8 @@ public:
     bool dodebug,pdodebug,first_frame;
     int fav_button,frames_cnt;
     QPixmap vframe;
-    qreal b_opacity;
-    QImage vimage;
+   // qreal b_opacity;
+    QPixmap vimage;
     QPixmap b_fav_image[2],b_play_image[2],*pix,b_pause_image,b_volume_image[2];
     int omw,prev_dist,oomw;
     bool last_frame;
@@ -81,6 +81,7 @@ public:
     QString player_url;
     int last_zeros;
     bool no_move;
+    bool lock;
     qreal scr;
     int bleft,bmid,bright;
     qint64 start_time,video_end,end_time;
@@ -94,7 +95,7 @@ public:
         PRESS,
         CLICK
     };
-    QImage img;
+    QPixmap img;
     bool updated,p_stop_emitted;
     void prepare(struct event_data[],int,QSize,QString,QList<int>);
     bool is_autorotating=false;
@@ -118,13 +119,11 @@ public:
     int dpi,type,ol1,ol2,ol3,ol4,mw,rotate_to_element;
     bool need_update;
     int wind,corr_offset,old_pos;
-    bool setting_face;
     QSize wsize,msize;
     QTimer* timer;
     QString buff_perc;
-    void gen_widget(int);
     struct Widget{
-        QImage* image;
+        QPixmap* image;
         bool is_fav;
         int loaded;
     } widget[1000];
@@ -132,6 +131,7 @@ public:
     int rf;
     MyVideoSurface* video=nullptr;
     QMediaPlayer*player=nullptr;
+    QMutex _mutex;
 public slots:
     void init_player(QString);
     void setImage(const QImage&,bool);
@@ -142,7 +142,7 @@ public slots:
     void play();
     void stop();
     void seek(qint64, bool play=false);
-
+    void start_bg_proc();
 private:
     QFuture<void> future;
     QString num(int),netfile;
@@ -151,7 +151,7 @@ private:
     qreal hscroll_autopilot=0;
     qreal hscroll_iner=0;
     qreal trip,left,mid,right;
-    QImage vim;
+    QPixmap vim;
     qreal corr1;
     qreal corr2;
     void get_offs(qreal);
@@ -167,8 +167,11 @@ private:
     bool pressed=false,unblocking_facer;
     Qt::AspectRatioMode aspect;
     void block_native_surface();
+    QList<QFuture<void>> futures;
+    QMutex _mutex5;
+
 private slots:
-    void timerev();
+    void timerev(bool st=false);
 signals:
     void set_top(int);
     void wshow(int);
@@ -179,6 +182,7 @@ signals:
     void add_fav_click();
     void got_image();
     void setFace(int,const QString&);
+    void go_update();
 protected:
     void paintGL() override;
     void initializeGL() override;

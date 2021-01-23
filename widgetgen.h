@@ -17,57 +17,70 @@
 class widgetGen : public QObject
 {
     Q_OBJECT
-    Q_DISABLE_COPY(widgetGen)
 public:
 
-    explicit widgetGen(QObject *parent = nullptr);
+    widgetGen(QObject *parent = nullptr);
     ~widgetGen();
     void make_brick(int,int,int,int items_cnt,const QString&,const QString&,const QString&,const QString&,const QString&,
-                    const QString&,int ind_oid=-1);
-    void set_markers(QOpenGLWidget* mf,QOpenGLWidget* mm,QOpenGLWidget* ml, QOpenGLWidget* me,QOpenGLWidget* ms);
+                    const QString&,int ind_oid=-1,QString event=no_data_string);
     bool back_mutex;
     // lists
     void share();
+    void forceUpdate();
     void activate(bool);
+    void setMFCorr(int,int);
     void hideRastered(QWidget*);
-    int inpt_h;
+    void toggleNavi(bool);
+
+    int inpt_h,brcorr;
     QPointer<topMenuSwitcher> top_menu_switcher;
     void setupTopMenuSwitcher(QRect);
     QInputMethod* input=QApplication::inputMethod();
-    QString events[100];
-    void setFrames(QList<QWidget*> f1,QList<QWidget*> f2);
+    void setFrames(QWidget*,QWidget*);
+    const QString &currEvent();
     void setCoords(QRect,int);
     QIcon star[2];
+    double compr;
     QStringList getThumbRef(const QString&, QString);
-    void setDirector(QWidget*);
+    void setDirector(QMainWindow*);
     bool setContext(const QString&);
+    void setSelectors(bool force=false);
+    QPointer<gLabel>mglsearch(const QString lookfor);
+    void setSearch(bool,QFrame* w=nullptr);
     QRect get_srect(int),txt_rect,tim_rect;
-    void showSelectors();
+    QList<QPointer<gLabel>> tmp_list;
+    int lb;
     int br_deleted,iw;
     const QString& getContext();
     void setupWrapper(QList<QList<QWidget*>>);
     void set_prospect_params(Prospect&);
-    QList<QPointer<gLabel>> itemList();
+    QList<QPointer<gLabel>>* itemList();
     QString actContext();
-    void helper();
-    bool isProspect();
+    bool sh_titles;
+    void shTitles(bool);
+    bool isProspect(QString t="");
+    bool isVideos(QString t="");
+    bool isFVideos(QString t="");
+    bool isFScenes(QString t="");
+    bool isFItems(QString t="");
     QPointer<gLabel> currItem(),producerOf(int i=-1);
     QString currType();
     void set_fav_mode();
     QPointer<gLabel> item(int,QString t="");
     bool manageSelectors();
-    int over_brick,over_brick_ind,antime;
+    int over_brick,over_brick_ind,antime,last_over_brick;
     QString filtered,prev_context;
     QRect rct,brct;
     int animating;
     qreal dpi,lmm,_prop;
     Prospect* par;
+    int leased;
     void settleAt(int);
     void toggleBricks(bool);
     void toggleBricks();
+    int tgs;
     struct PosterData{
         int index;
-        bool stage;
         QString type;
         QString file;
         QString up;
@@ -77,9 +90,8 @@ public:
     };
     struct PostersReady{
         int index;
-        bool stage;
         QString type;
-        QPixmap* poster;
+        const QImage* poster;
         QString context;
     };
     PostersReady pr;
@@ -88,12 +100,14 @@ public:
     // lists
     QList<PosterData> poster_data;
     QList<PostersReady> poster_data_ready;
-    void removeOffscreen(int);
     int lastBrick();
+    bool prev_selector;
     QRect brick_geo(int i=-1);
+    void toggle(gLabel*,bool,int i=0);
     QRect get_new_brick_geo(int i, int h=-1);
     qreal mrgh;
-    int lastVis;
+    int lastVis();
+    gLabel* lastVisibleItem();
     int filter_chars;
     void give_event();
     int getItemsCount();
@@ -110,22 +124,30 @@ public:
     bool mclick();
     QList<int> fav_videos_list;
     void set_fav_videos_list(const QJsonArray*);
-    void mark_fav(int);
     QPointer<widget_wrapper> glcontainer;
     void start_bg_proc();
     void stop_bg_proc();
     bool isLocked();
     void unlock();
     void lock();
-    int mfy();
+    int mrh();
+    int msy();
+    int mrt();
+    QOpenGLWidget marker_middle,marker_last;
+    bool isNDis();
+    int  corr_y;
+    gLabel* fooLab;
 private:
+
+    int lastvis;
+    bool naviDis;
+    QMutex _mutex;
     void connectSignals(gLabel*);
     bool canToggleFavs();
     bool canToggleShares();
     int lastscr,mfcorr;
     bool isTakingToCarousel();
     bool locked,lasttoggl;
-    void setContainer();
     QFont txt_font,tim_font;
     int fl,lh,lw,_lw,_lw2,lm,vtm,htm;
     bool is_expanded,gen_busy;
@@ -137,9 +159,8 @@ private:
     bool debg;
     QList<QPointer<gLabel>> vb,fib,fsb,fvb,msb,foo;
     int wdth,scrr,scr;
-    QPointer<QOpenGLWidget> marker,marker_first,marker_middle,marker_last,marker_switch;
     Qt::Alignment tim_align;
-    QPixmap splash_img,*ppi=nullptr,*ppt=nullptr;
+    QImage *ppi=nullptr,*ppt=nullptr, splash_img;
     QPoint pos, prev_pos, touch_pos;
     QVector2D diff,move;
     int tail_offs;
@@ -156,19 +177,22 @@ private:
     QTimer timer;
 signals:
     void shown();
+    void reval(QPointer<gLabel>);
     void ready_to_switch(int);
     void mouse_move(QPoint,int);
     void entered(int,int,int);
     void click_delete(int,int);
+    void enableMenu();
     void click(int,int);
-    void add_fav_videos(int);
-    void del_fav_videos(int,const QString&);
+    void toggle_fav_video(int,bool);
+    void del_fav(const QString&,int);
     void download(const QString&, const QString&, const int, bool);
     void hided();
+    void back(QString,QStringList={});
     void get_poster(int,bool,const QString&,const QString&,const QString&,const QString&);
     void settled();
     void startProcessing();
-    void delete_item(int,const QString&);
+    void fav_update(int);
     void send_item(int);
     void go(const QString&,const QStringList&);
     void preparing_shutdown(int);
@@ -179,7 +203,8 @@ signals:
     void closeMenu();
 
 private slots:
-    void poster_generator(int, bool,const QString&,const QString&,const QString&,const QString&,const QString&,int);
+    void  revalidate(QPointer<gLabel>);
+    void poster_generator(int,const QString&,const QString&,const QString&,const QString&,const QString&,int);
     void make_poster();
     void noticeShow();
     void put_poster(int);
@@ -188,8 +213,9 @@ private slots:
     void timerEv(bool force=false);
 
 public slots:
+    void removeTempData(int);
     void finish_deletion();
-    void brick_remove(int);
+    void brick_remove();
     void filter(const QString&);
     void filter();
 };

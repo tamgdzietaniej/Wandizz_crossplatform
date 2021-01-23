@@ -1,6 +1,6 @@
 #include "sqlapi.h"
 
-sqlApi::sqlApi(QObject *parent) : QObject(parent),debg(true)
+sqlApi::sqlApi(QObject *parent) : QObject(parent),debg(false)
 {
     clear_all();
     manager=new QNetworkAccessManager();
@@ -20,8 +20,8 @@ void sqlApi::selectQuery(QStringList tables, QStringList filters, QStringList co
         set_groupby(format.takeFirst());
     if(!format.empty())
         set_sort(format.takeFirst());
-   // if(debg)
-        qDebug()<<"SELECT BUILDER:"<<get_query();
+    // if(debg)
+    qDebug()<<"SELECT BUILDER:"<<get_query();
 }
 void sqlApi::clear_all(){
     method=NONE;
@@ -211,7 +211,7 @@ QUrl sqlApi::get_query(bool sh){
     query.prepend(root_url);
     if(sh){
         qDebug()<<"SH_QUERY:"<<query;
-}
+    }
     return query;
 }
 void sqlApi::send_query(){

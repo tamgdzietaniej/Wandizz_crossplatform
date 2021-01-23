@@ -1,5 +1,5 @@
 QT       += core gui network opengl quick qml quickwidgets  gui-private
-lessThan(QT_MAJOR_VERSION,6): QT += widgets multimedia positioning multimediawidgets webview
+lessThan(QT_MAJOR_VERSION,6): QT += widgets multimedia multimediawidgets webview positioning
 CONFIG +=  mobility localization
 CONFIG += c++11
 TEMPLATE = app
@@ -103,7 +103,6 @@ FORMS += \
 
 
 ios{
-#LIBS += -framework FBSDKCoreKit.framework FBSDKLoginKit.framework UIKit
 HEADERS += shareios.h
 SOURCES += shareios.mm
 CONFIG +=  iphoneos
@@ -125,11 +124,12 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 android{
-include($$PWD/vendor/vendor.pri)
+     include($$PWD/vendor/vendor.pri)
     QT += androidextras
     HEADERS += share_cross.h
     SOURCES += share_cross.cpp
     ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+    ANDROID_ABIS = armeabi-v7a arm64-v8a
     include(android/ssl/openssl.pri)
     VERSION = 1.2.7
     ANDROID_VERSION_CODE = '8352'
@@ -141,10 +141,6 @@ include($$PWD/vendor/vendor.pri)
         images.qrc \
         qml.qrc
 
-
-ANDROID_ABIS = armeabi-v7a arm64-v8a
-SUPPORTED_ABIS = armeabi-v7a arm64-v8a
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
 DISTFILES += \
     android/AndroidManifest.xml \
@@ -160,4 +156,4 @@ DISTFILES += \
     android/src/wandizz/shares/shares.java
 }
 
-ANDROID_ABIS = armeabi-v7a arm64-v8a
+

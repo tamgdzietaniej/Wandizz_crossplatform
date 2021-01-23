@@ -11,6 +11,7 @@ menu::menu(QWidget *parent) :
     ui->setupUi(this);
     setObjectName("menu");
     setWindowFlag(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_DeleteOnClose,true);
     setAttribute(Qt::WA_AlwaysStackOnTop);
     showing=true;
     hidding=false;
@@ -33,15 +34,18 @@ void menu::set_access(bool a){
     ui->m_videorec->setEnabled(a);
     ui->m_videos->setEnabled(a);
     ui->m_share->setEnabled(a);
-    qDebug()<<"MENU:"<<a;
+   // qDebug()<<"MENU:"<<a;
 }
 void menu::deactivate(QString s){
     if(!is_access)return;
-    qDebug()<<"Deactivate:"<<s;
     ui->m_videorec->setDisabled(s=="sync");
     ui->m_fav_items->setDisabled(s=="fav_items");
     ui->m_fav_scenes->setDisabled(s=="fav_scenes");
     ui->m_fav_videos->setDisabled(s=="fav_videos");
+    ui->m_videos->setDisabled(s=="videos");
+    ui->m_search_items->setDisabled(s=="s_fav_items");
+    ui->m_search_scenes->setDisabled(s=="s_fav_scenes");
+    ui->m_search_videos->setDisabled(s=="s_fav_videos");
     ui->m_videos->setDisabled(s=="videos");
     ui->m_prof_settings->setDisabled(s=="profsettings");
     ui->m_gohome->setDisabled(s=="userprof");
