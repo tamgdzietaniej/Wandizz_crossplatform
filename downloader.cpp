@@ -3,7 +3,7 @@
 downloader::downloader(QObject *parent) : QObject(parent)
 {
     t=new QTimer(this);
- //   connect(t,SIGNAL(timeout()),this,SLOT(begin_download()),Qt::QueuedConnection);
+    connect(t,SIGNAL(timeout()),this,SLOT(begin_download()),Qt::QueuedConnection);
     mthread=new QThread();
     writer=new write_buffers();
     //  connect(writer,SIGNAL(destroyed()),mthread,SLOT(quit()));
@@ -18,6 +18,8 @@ downloader::downloader(QObject *parent) : QObject(parent)
     connect(writer, SIGNAL(process()), this, SIGNAL(got_data()),Qt::QueuedConnection);
     connect(writer,SIGNAL(got_data()),this,SIGNAL(got_data()));
     dact=false;
+    pending=0;
+    total=0;
 }
 /*
 void downloader::mid_process(){
@@ -47,24 +49,28 @@ void downloader::run_watchdog(){
 
 }
 */
-void downloader::clearList(){
+    void downloader::clearList(){
     urllist.clear();
 }
 void downloader::push_url(const QString& url, const QString& fn){
     push_url(url,fn,-1,0);
 }
 void downloader::push_url(const QString& url,const QString& fn, int index,bool rev){
-    //  qDebug()<<"DN:"<<url;
+    qDebug()<<"DN:"<<url;
     if(!QUrl(url).isValid()){
         qDebug()<<"WAND:DN:ERROR:WRONG URL FORMAT:"<<url;
         return;
     }
-  //  if(urllist.contains(url)){
-  //      qDebug()<<"LIST CONTAINS:"<<url;
-  //      return;
-  //  }
+    //  if(urllist.contains(url)){
+    //      qDebug()<<"LIST CONTAINS:"<<url;
+    //      return;
+    //  }
+    if(urllist.contains(url)){
+        if(!rev){
+            return;
+        } else qDebug()<<"URL:"<<url<<"revalidate";
+    }
     urllist.append(url);
-
     Task* task=new Task;
     task->widget_id=index;
     task->url=url;
@@ -73,10 +79,7 @@ void downloader::push_url(const QString& url,const QString& fn, int index,bool r
     writer->add_task(task);
     total++;
     pending++;
-    if(!dact)begin_download();
-   // if(!t->isActive()){
-   //     t->start(50);
-  //  }
+    begin_download();
 }
 void downloader::begin_download(){
     if(dact){
@@ -88,25 +91,28 @@ void downloader::begin_download(){
         write_buffers::active++;
         QUrl url=write_buffers::tasks.first()->url;
         int sys_id=writer->set_task();
+        qDebug()<<"WRITER:"<<write_buffers::tasks.count();
         request->setUrl(url);
-        //   qDebug()<<"downloader:"<<url;
+        qDebug()<<"downloader:"<<url<<write_buffers::sent.count()<<write_buffers::tasks.count()<<write_buffers::done.count();
         request->setRawHeader("Connection","Keep-Alive");
         request->setRawHeader("Keep-Alive","timeout=30, max=100;");
         QNetworkReply* reply(manager->get(*request));
         reply->setObjectName(QString::number(sys_id));
-        QApplication::processEvents();
-    //    if(write_buffers::active<max_active && t->interval()!=5){
-     //       t->setInterval(50);
-     //   }
-   // } else {
-    //    if(write_buffers::tasks.count()==0){
-    //        t->stop();
-    //    }
-   }
-    if(write_buffers::tasks.count()>0 && write_buffers::active<max_active){
-        qDebug()<<"MARAUDER!"<<write_buffers::tasks.count();
-        begin_download();
+        if(write_buffers::active<max_active && t->interval()!=100){
+            qDebug()<<"START BUFFER"<<write_buffers::active;
+            t->start(100);
+
+        } else
+            if(write_buffers::sent.count()==0 && write_buffers::tasks.count()==0 && write_buffers::done.count()==0){
+            qDebug()<<"STOP BUFFER"<<write_buffers::active;
+
+            t->start(200);
+        }
     }
+    //   if(write_buffers::tasks.count()>0 && write_buffers::active<max_active){
+    //      qDebug()<<"MARAUDER!"<<write_buffers::tasks.count();
+    //     begin_download();
+    //  }
 
     dact=false;
 }

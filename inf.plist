@@ -23,7 +23,7 @@
 	<key>CFBundleSignature</key>
 	<string>${QMAKE_PKGINFO_TYPEINFO}</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>6.9</string>
 	<key>DefaultDeploymentTarget</key>
 	<string>13.2</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -53,6 +53,8 @@
 	<string>YES</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Depending of Your location app will offer relevant shopping opportunities.</string>
+	<key>NSMainNibFile</key>
+	<string>Launch</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Our app allows for video recognition - based on audio - that is why app needs access to Your microphone.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -71,6 +73,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIViewEdgeAntialiasing</key>
-	<true/>
+	<false/>
 </dict>
 </plist>

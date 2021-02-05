@@ -11,7 +11,7 @@ class MainWidget : public QOpenGLWidget
 {
     Q_OBJECT
 public:
-    explicit MainWidget(int,QWidget* parent=nullptr);
+    MainWidget(int,QWidget* parent=nullptr);
     ~MainWidget() override;
     bool loop=false;
     bool player_inited;
@@ -34,14 +34,13 @@ public:
     int total_loaded;
     int x,y,w,h,ox;
     int items;
-    int beg_h,beg_y;
-    QThread mthread;
+    int bw,bh,bx,by;
     bool dodebug,pdodebug,first_frame;
     int fav_button,frames_cnt;
-    QPixmap vframe;
-   // qreal b_opacity;
-    QPixmap vimage;
-    QPixmap b_fav_image[2],b_play_image[2],*pix,b_pause_image,b_volume_image[2];
+    QImage vframe;
+    // qreal b_opacity;
+    QImage vimage;
+    QImage b_fav_image[2],b_play_image[2],*pix,b_pause_image,b_volume_image[2];
     int omw,prev_dist,oomw;
     bool last_frame;
     int lw,rw;
@@ -51,14 +50,13 @@ public:
     int srotate_to_element;
     int buffer_load;
     QPointF button_pos;
-    QSize viewport=QApplication::primaryScreen()->virtualSize();
     bool vscrolling,scroll_locked,sscroling;
     struct event_data{
         QString event; // sklep
         QString image; // item image
         QString frame; // scene image
         QString name; //nazwa itemu
-        QString frame_file; // plik
+        QString frame_file; // plik5
         QString item_file; // j.w.
         int dur; // duration
 
@@ -95,7 +93,7 @@ public:
         PRESS,
         CLICK
     };
-    QPixmap img;
+    QImage img;
     bool updated,p_stop_emitted;
     void prepare(struct event_data[],int,QSize,QString,QList<int>);
     bool is_autorotating=false;
@@ -123,16 +121,20 @@ public:
     QTimer* timer;
     QString buff_perc;
     struct Widget{
-        QPixmap* image;
-        bool is_fav;
-        int loaded;
-    } widget[1000];
+        QImage* image=nullptr;
+        QImage* swap_img=nullptr;
+        bool shown=false;
+        bool is_fav=false;
+        bool waiting_swap=false;
+    } slide[1000];
     void takeImage(int,QString);
     int rf;
     MyVideoSurface* video=nullptr;
     QMediaPlayer*player=nullptr;
     QMutex _mutex;
+    QFuture<void> future;
 public slots:
+    void getPics();
     void init_player(QString);
     void setImage(const QImage&,bool);
     void set_slave();
@@ -144,21 +146,20 @@ public slots:
     void seek(qint64, bool play=false);
     void start_bg_proc();
 private:
-    QFuture<void> future;
     QString num(int),netfile;
     void needs_update();
     swipe swipe_dir;
     qreal hscroll_autopilot=0;
     qreal hscroll_iner=0;
     qreal trip,left,mid,right;
-    QPixmap vim;
+    QImage vim;
     qreal corr1;
     qreal corr2;
     void get_offs(qreal);
     QRect button_rect,play_rect,button2_rect,play2_rect,forbid_rect,volume_rect,volume2_rect;
     qreal get_trip_to(int);
     int closer_neighbour;
-    QPixmap button_pix[2],forbid;
+    QImage button_pix[2],forbid;
     bool all_rendered;
     qreal get_trip_home();
     bool shwd;
@@ -167,11 +168,11 @@ private:
     bool pressed=false,unblocking_facer;
     Qt::AspectRatioMode aspect;
     void block_native_surface();
-    QList<QFuture<void>> futures;
-    QMutex _mutex5;
 
+    bool settin;
 private slots:
     void timerev(bool st=false);
+    void setNextShot(int);
 signals:
     void set_top(int);
     void wshow(int);
@@ -179,9 +180,11 @@ signals:
     void spin_friend(int);
     void go_web(QString);
     void set_favs_look_on_start(int);
+    void download(QString,QString);
     void add_fav_click();
     void got_image();
     void setFace(int,const QString&);
+    void timershot(int);
     void go_update();
 protected:
     void paintGL() override;
@@ -193,3 +196,4 @@ protected:
 };
 
 #endif // MAINWIDGET_H
+

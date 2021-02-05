@@ -6,6 +6,9 @@ SignIn::SignIn(QWidget *parent) :
     ui(new Ui::SignIn)
 {
     ui->setupUi(this);
+    init();
+}
+void SignIn::init(){
     toggle_auth(false);
 #if defined (Q_OS_IOS)
     ui->b_twitter->setText("Sign with Apple");
@@ -15,17 +18,17 @@ SignIn::SignIn(QWidget *parent) :
 
 }
 void SignIn::shSs(){;
-                    ui->logo_mid->raise();
-                                    ui->logo_mid->show();
-                   }
+    ui->logo_mid->raise();
+    ui->logo_mid->show();
+}
 void SignIn::toggle_auth(bool toggle){
     ui->verlabel->setText("ver:"+version);
-    ui->anframe->move(0,height()-ui->anframe->height());
+    //  ui->anframe->move(0,height()-ui->anframe->height());
     ui->anframe->setEnabled(toggle);
     ui->anframe->setVisible(toggle);
-  //  ui->anframe->move(ui->anframe->x(),height()-ui->anframe->height());
+    //  ui->anframe->move(ui->anframe->x(),height()-ui->anframe->height());
     // ui->logo_google->setGeometry(ui->b_google->x()+30,ui->b_google->y()+5,ui->b_google->height()-10,ui->b_google->height()-10);
-  //  shSs();
+    //  shSs();
 
 }
 SignIn::~SignIn()
@@ -39,11 +42,11 @@ void SignIn::set_ver(QString ver){
 
 void SignIn::on_b_signup_clicked()
 {
-    emit go("userprof",{"silent"});
+    emit go("userprof",{});
 }
 void SignIn::on_b_signin_clicked()
 {
-    emit go("accrec",{});
+    emit go("profset",{"accrec"});
 }
 
 void SignIn::on_b_exit_clicked()

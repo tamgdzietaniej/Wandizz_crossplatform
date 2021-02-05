@@ -31,21 +31,13 @@ private:
     Ui::metasearch *ui;
     qreal dpi;
     bool offline;
-    QFuture<void> future;
-    QInputMethod* input;
-    void hide_temps();
     void set_fav_videos_list(const QJsonArray*);
-    void setGenerator();
-    int corr_y;
-    QRect vcorr;
 
 private slots:
     void on_b_options_2_clicked();
     void on_b_options_clicked();
     void on_b_back_clicked();
     void on_b_back_2_clicked();
-
-
 protected:
     void mousePressEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;

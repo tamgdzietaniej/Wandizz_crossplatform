@@ -1,10 +1,12 @@
 #include "widget_wrapper.h"
 #define G_N_ELEMENTS(arr) ((sizeof(arr))/(sizeof(arr[0])))
 widget_wrapper::widget_wrapper(QWidget *parent,QString cname) : QOpenGLWidget(parent),selectors_visible(false),
-    ready_to_paint(false),type(cname),selectors_visible_prev(false){
+    ready_to_paint(false),selectors_visible_prev(false){
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
     setAttribute(Qt::WA_DeleteOnClose,true);
-    setMouseTracking(true);
+    setAttribute(Qt::WA_TransparentForMouseEvents,false);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setMouseTracking(false);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
     dpi = devicePixelRatio();
     debg=false;
@@ -12,16 +14,42 @@ widget_wrapper::widget_wrapper(QWidget *parent,QString cname) : QOpenGLWidget(pa
     dpi*=2;
 #endif
     setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
+
+    gradient.setCoordinateMode(QLinearGradient::ObjectMode);
+    gradient.setStart(0,0);
+    gradient.setFinalStop(QPoint(1,0));// diagonal gradient from top-left to bottom-right
+    //   gradient.setColorAt(0, QColor(59,34,100));
+    gradient.setColorAt(0, QColor(50,25,90));
+    gradient.setColorAt(0.5, QColor(150,2,170));
+    gradient.setColorAt(1, QColor(59,34,100));
+    gradient2.setCoordinateMode(QLinearGradient::ObjectMode);
+    gradient2.setStart(0,0);
+    gradient2.setFinalStop(QPoint(0,1));
+    gradient2.setColorAt(0, QColor(0,0,0,200));
+    gradient2.setColorAt(0.05, QColor(0,0,0,80));
+    gradient2.setColorAt(0.5, QColor(0,0,0,60));
+    gradient2.setColorAt(0.95, QColor(0,0,0,80));
+    gradient2.setColorAt(1, QColor(0,0,0,200));
+    int wdt=QApplication::desktop()->geometry().width();
+    int hgh=QApplication::desktop()->geometry().height();
+    int marg=15*wdt/400;
+    qDebug()<<"COORDS:"<<width()<<height();
+    shadow_geo.setRect(marg,marg,wdt-2*marg,hgh-2*marg);
+    setMarkers();
+}
+void widget_wrapper::setMarkers(){
     marker_head=new QOpenGLWidget(this);
+    marker_body[0]=new QOpenGLWidget(this);
+    marker_body[1]=new QOpenGLWidget(this);
     marker_tail=new QOpenGLWidget(this);
     marker_head->setFixedSize(0,0);
+    marker_body[0]->setFixedSize(0,0);
+    marker_body[1]->setFixedSize(0,0);
     marker_tail->setFixedSize(0,0);
     marker_head->move(0,0);
+    marker_body[0]->move(0,0);
+    marker_body[1]->move(0,0);
     marker_tail->move(0,height());
-}
-void widget_wrapper::run(){
-    show();
-    update();
 }
 void widget_wrapper::initializeGL(){
     glClearColor(0,0,0,0);
@@ -35,7 +63,6 @@ bool widget_wrapper::get_hover(QPoint pos){
     for(int j=0;j<wlist.count();j++){
         for(int i=0;i<wlist.at(j).count();i++){
             QList<QPushButton*> bl = wlist.at(j).at(i)->findChildren<QPushButton *>(QString(),Qt::FindChildOptions(Qt::FindChildrenRecursively));
-            qDebug()<<"BUTTONS:"<<bl;
             if(bl.count()>0){
                 for(int k=0;k<bl.count();k++){
                     if(clicked(bl.at(k))){
@@ -46,7 +73,6 @@ bool widget_wrapper::get_hover(QPoint pos){
         }
         for(int i=0;i<wlist.at(j).count();i++){
             QList<QCheckBox*> bl = wlist.at(j).at(i)->findChildren<QCheckBox*>(QString(),Qt::FindChildOptions(Qt::FindChildrenRecursively));
-              qDebug()<<"CHKBUTTONS:"<<bl;
             if(bl.count()>0){
                 for(int k=0;k<bl.count();k++){
                     if(clicked(bl.at(k))){
@@ -56,12 +82,13 @@ bool widget_wrapper::get_hover(QPoint pos){
             }
         }
     }
-//    if(clicked(edit)){
-   //     if(!input->isVisible()){
-    //        input->setVisible(true);
-     //   }
-    //    return false;
-  //  }
+    if(prospectInfo->isEnabled()){
+        QList<QPushButton*> bl=prospectInfo->findChildren<QPushButton*>(QString(),Qt::FindChildrenRecursively);
+        if(bl.count()>0){
+            bl[0]->click();
+        }
+        else qDebug()<<"no button";
+    }
 }
 bool widget_wrapper::clicked(QWidget* w){
     if(!w)return false;
@@ -85,7 +112,9 @@ bool widget_wrapper::clicked(QWidget* w){
     }
     return false;
 }
-
+void widget_wrapper::setTypeID(bool ctx){
+    type_id=ctx;
+}
 
 void widget_wrapper::showSelectors(bool s){
     if(selectors_visible!=s){
@@ -94,16 +123,19 @@ void widget_wrapper::showSelectors(bool s){
     }
 }
 int widget_wrapper::mrh(){
-    if(oldh!=marker_head->y())
-        qDebug()<<"MRH:"<<marker_head->y()<<marker_head->pos();
-    oldh=marker_head->y();
-    return marker_head->y()+vcorr;
+    return marker_head->y();
 }
 int widget_wrapper::mrt(){
-    if(oldt!=marker_tail->y())
-        qDebug()<<"MRT:"<<marker_tail->y()<<marker_tail->pos();
-    oldt=marker_tail->y();
     return marker_tail->y();
+}
+int widget_wrapper::mrb(){
+    return marker_body[type_id]->y();
+}
+void widget_wrapper::setMrb(bool ctx,int m){
+    marker_body[ctx]->move(0,m);
+}
+void widget_wrapper::setupInfo(QFrame *pi){
+    prospectInfo=static_cast<QFrame*>(pi);
 }
 void widget_wrapper::setupWrapper(QList<QList<QWidget*>> wdl){
     /* mapper */
@@ -113,39 +145,47 @@ void widget_wrapper::setupWrapper(QList<QList<QWidget*>> wdl){
      * 2- dynamic, rendered when vP::UNDER
      * 3- static, rendered when vP::OVER
      */
-    marker_head->move(0,0);
-    marker_tail->move(0,0);
     wlist.clear();
     wlist.append(wdl);
     for(int j=0;j<wdl.count();j++){
-            for(int i=0;i<wlist.at(j).count();i++){
-                QPoint tpos(wlist.at(j).at(i)->mapToGlobal(QPoint(0,0)));
-                tpos.setY(tpos.y());
-                if(j==1 || j==2){
-                    wlist.at(j).at(i)->setParent(this);
-                     wlist.at(j).at(i)->hide();
+        for(int i=0;i<wlist.at(j).count();i++){
+            QPoint tpos(wlist.at(j).at(i)->mapToGlobal(QPoint(0,0)));
+            tpos.setY(tpos.y()-mrh());
+            if(j==1 || j==2){
+                wlist.at(j).at(i)->setParent(this);
+                wlist.at(j).at(i)->setVisible(false);
             }
-                wlist.at(j).at(i)->move(mapFromGlobal(tpos));
-            }
+            wlist.at(j).at(i)->move(mapFromGlobal(tpos));
+        }
     }
+    int marg=15*width()/400;
+    shadow_geo.setRect(marg,marg,width()-2*marg,height()-2*marg);
     ready_to_paint=true;
-    if(!isVisible()){
-        update();
-    QApplication::processEvents();
-    }
 }
 void widget_wrapper::resizeEvent(QResizeEvent *e){
     resizeGL(e->size().width()*dpi,e->size().height()*dpi);
 }
 void widget_wrapper::paintGL(){
+    QPainter painter(this);
+    qDebug()<<"PAINT";
+    /* flush gpu */
+    painter.beginNativePainting();
+    glClear(GL_COLOR_BUFFER_BIT);
+    painter.endNativePainting();
+
+    /* background */
+    QPainter p(this);
+    QPen pen;
+    pen.setWidth(1);
+    pen.setColor(QColor(0,0,0,0));
+    p.setRenderHints(QPainter::HighQualityAntialiasing);
+    p.setPen(pen);
+    p.setBrush(gradient);
+    p.fillRect(rect(),p.brush());
+    p.setPen(QColor(0,0,0,100));
+    p.setBrush(QColor(0,0,0,70));
+    p.drawRoundedRect(shadow_geo,5,5);
     if(ready_to_paint){
-        QPainter painter(this);
-
-        /* flush gpu */
-        painter.beginNativePainting();
-        glClear(GL_COLOR_BUFFER_BIT);
-        painter.endNativePainting();
-
         /* paint event */
         /* main render loop */
         for(int j=0;j<wlist.count();j++){
@@ -159,22 +199,24 @@ void widget_wrapper::paintGL(){
             /* inner loop - cluster */
             for(int i=0;i<wlist.at(j).count();i++){
                 QWidget* w=wlist.at(j).at(i);
-     //           qDebug()<<"pint"<<w->objectName()<<w->isEnabled();
                 if(w)
                     if(w->isEnabled()){
-         //               qDebug()<<"Rend:"<<w->objectName()<<w->pos()<<w->isEnabled()<<w->size();
                         if(rect().intersects(QRect(w->pos(),w->size()))){
-
                             w->render(&painter,w->mapToGlobal(QPoint(0,0)));
-                 //           if(w->objectName()=="switch_b_frame")
-           //                 qDebug()<<"RENDERING SWITCH:"<<w->pos();
                         }
                     }
             }
         }
+        if(prospectInfo->isEnabled()){
+            prospectInfo->render(&painter,prospectInfo->pos());
+        }
+        //    if(noResults->isEnabled()){
+        //        noResults->render(&painter,noResults->pos());
+        //    }
         if(nightmode)
             painter.fillRect(rect(),QColor(0,0,0,50));
         painter.end();
+        qDebug()<<"PAINTER GLCONTAINER";
     } else
         qDebug()<<"Container not ready";
 }
@@ -183,5 +225,5 @@ void widget_wrapper::forceUpdate(){
     update();
 }
 widget_wrapper::~widget_wrapper(){
-    //    qDebug()<<"DESTROYER:WWRAP";
+    qDebug()<<"DESTROYER:WWRAP";
 }

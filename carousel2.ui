@@ -1088,7 +1088,7 @@ border:none;
     </widget>
     <widget class="QPushButton" name="b_back">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>

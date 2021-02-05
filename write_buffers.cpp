@@ -37,13 +37,13 @@ int write_buffers::add_task(Task* task){
     return write_buffers::tasks.count();
 }
 int write_buffers::set_task(){
-    QMutexLocker {&_mutex};
     if(sysid>1000)sysid=0;
     write_buffers::tasks.first()->sys_id=sysid;
     write_buffers::sent.append(write_buffers::tasks.takeFirst());
     return sysid++;
 }
 void write_buffers::get_data(QNetworkReply* rep){
+     write_buffers::active--;
     alldata+=rep->bytesAvailable();
     int sys_id=rep->objectName().toInt();
     for(int i=0;i<write_buffers::sent.count();i++){
@@ -80,12 +80,12 @@ void write_buffers::get_data(QNetworkReply* rep){
                 }
                 rep->close();
                 rep->deleteLater();
-                emit timerstart();
+                if(!timer->isActive())
+                    emit timerstart();
             }
             break;
         }
     }
-    write_buffers::active--;
     if(active==0){
         qDebug()<<"------------------------------------------------------------------";
         qDebug()<<"Writer finished summary:"<<alldata<<" bytes ("<<alldata/1024<<"kB";
@@ -98,7 +98,6 @@ void write_buffers::get_data(QNetworkReply* rep){
 }
 void write_buffers::process_buffer(){
     if(write_buffers::done.count()==0){
-        emit timerstop();
         return;
     }
     if(get_cnt>3){
@@ -114,6 +113,7 @@ void write_buffers::process_buffer(){
         qDebug()<<"!!!!!!!! FILE FORMAT ERROR:"<<t->reply.left(8).toHex(':')<<" - "<<t->file.fileName()<<t->url;
         t->file.remove();
     } else {
+        qDebug()<<"FILENAME:"<<t->file.fileName();
         QFile* tmpf=new QFile(t->file.fileName()+".lock");
         tmpf->open(QIODevice::WriteOnly);
         tmpf->write(QByteArray());
@@ -122,7 +122,7 @@ void write_buffers::process_buffer(){
         t->file.write(t->reply);
         t->file.close();
         QFile::remove(t->file.fileName()+".lock");
-        qDebug()<<"Wrote:"<<t->file.fileName()<<t->file.size();
+        qDebug()<<"WRITER:Wrote:"<<t->file.fileName()<<t->file.size();
     }
     delete t;
     get_cnt--;

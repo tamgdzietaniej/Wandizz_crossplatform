@@ -6,6 +6,9 @@
 #include <QWidget>
 #include <QApplication>
 #include <QScreen>
+#include <QDebug>
+#include <QDesktopWidget>
+#include <QOperatingSystemVersion>
 class geofit : public QObject
 {
     Q_OBJECT

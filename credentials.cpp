@@ -224,7 +224,30 @@ void Credentials::get_remote_params(){
         QString val=json.value("val").toString();
         QString var=json.value("var").toString();
         qDebug()<<val<<" ===> "<<var;
+        /*
+        if(var=="carousel_video_duration")carousel.mediaPlayer.video_duration=val.toInt();
+        if(var=="carousel_video")carousel.mediaPlayer.enabled=val.toInt();
+        if(var=="show_prospect_favs")prospect.osd.toggle_favs=val.toInt();
+        if(var=="show_prospect_shares")prospect.osd.show_shars=val.toInt();
+        if(var=="show_toggled_star")prospect.osd.show_favs=val.toInt();
+        if(var=="restrict_if_no_context")prospect.context_has_to_be=val.toInt();
+        if(var=="prospect_initial_view")prospect.osd.view_all_at_start=val.toInt();
+
+        if(var=="widget_height_factor")prospect.vwidget.sizes.height_factor=val.toDouble();
+        if(var=="videos_coming_soon_picture_dim")prospect.vwidget.colors.extra_dimmer=val.toInt();
+        if(var=="videos_coming_soon_text")prospect.vwidget.content.coming_soon.text=val;
+        if(var=="videos_coming_soon_text_size")prospect.vwidget.content.coming_soon.sizes.text=val.toInt();
+        if(var=="search_mag_glass")prospect.osd.zooming_glass=val.toInt();
+
+
+*/
+     //   if(var=="search_text_placeholder")appl.search.placeholder.content.text=val;
+      //  if(var=="search_text_color")appl.search.placeholder.content.color=val;
+     //   if(var=="search_height_factor")appl.search.size.height_factor=val.toInt();
+     //   if(var=="prospect_filter_chars")appl.search.idle_until=val.toInt();
+
         if(var=="carousel_video_duration")prospect_settings.player_offset=val.toInt();
+
         if(var=="carousel_video")prospect_settings.player_enabled=val.toInt();
         if(var=="show_prospect_favs")prospect_settings.prospect_favs=val.toInt();
         if(var=="show_prospect_shares")prospect_settings.prospect_shares=val.toInt();
@@ -244,8 +267,13 @@ void Credentials::get_remote_params(){
         if(var=="search_text_color")prospect_settings.search_text_color=val;
         if(var=="search_field_color")prospect_settings.search_field_color=val;
         if(var=="search_height_factor")prospect_settings.search_height_factor=val.toInt();
-        qDebug()<<prospect_settings.search_field_color;
+        qDebug()<<"COLORS:"<<prospect_settings.search_field_color<<prospect_settings.search_text_color;
     }
+}
+bool Credentials::is_context(){
+    if(prospect_settings.menu_context_restrict)
+        return context_id!=-1;
+    else return true;
 }
 QPixmap Credentials::circlePix(QPixmap p){
     int w=p.width();
@@ -556,20 +584,20 @@ QJsonArray Credentials::getFromFileCache(const QString &s){
 QJsonArray Credentials::get_fav_items(){
     sql_api.set_method( sqlApi::SELECT );
     sql_api.add_table( "favitems, titles, items2" );
-    sql_api.add_field( "items2.assigned,items2.id,items2.name,items2.image,titles.id,titles.title,titles.filename,titles.oid" );
+    sql_api.add_field( "items2.assigned,favitems.fav_id,items2.id,items2.name,items2.image,titles.id,titles.title,titles.filename,titles.oid,items2.url" );
     sql_api.add_equ( "user_id"  , curr_id );
     sql_api.add_equ_np("favitems.fav_id","items2.id");
     sql_api.add_equ_np("titles.id","items2.assigned");
     if(context_id!=-1){
         sql_api.add_equ( "items.oid"  , QString::number(context_id) );
     }
-    return  fetch_remote(true);
+    return  fetch_remote();
 }
 /* fav scenes */
 QJsonArray Credentials::get_fav_scenes(){
     sql_api.set_method( sqlApi::SELECT );
     sql_api.add_table( "favscenes,titles,scenes,timeline" );
-    sql_api.add_field( "favscenes.fav_id, titles.title,scenes.sceneid,scenes.scene_image,timeline.start,timeline.scene_id" );
+    sql_api.add_field( "favscenes.fav_id, titles.title,scenes.sceneid,scenes.scene_image,timeline.start,timeline.scene_id,scenes.title_id" );
     sql_api.add_equ( "user_id"  , curr_id );
     sql_api.add_equ_np("favscenes.fav_id","scenes.sceneid");
     sql_api.add_equ_np("favscenes.fav_id","timeline.scene_id");
@@ -591,7 +619,7 @@ QJsonArray Credentials::get_fav_videos( ){
     if(context_id!=-1){
         sql_api.add_equ( "oid"  , context_id );
     }
-    jfv=fetch_remote();
+    jfv=fetch_remote(true);
     return jfv;
 }
 
@@ -599,9 +627,9 @@ QJsonArray Credentials::get_fav_videos( ){
 /* COMPLETE TABLES OF: */
 void Credentials::get_stats(bool write){
     if(write){
+        jtit=get_titles();
         jp=get_producers();
         jtl=get_timeline();
-        jtit=get_titles();
         jtc=getEachTitleContentCounter();
         updateFileCache(jp,f_producers);
         updateFileCache(jtl,f_timeline);
@@ -678,23 +706,23 @@ bool Credentials::check_scene_favs( QString image ){
 }
 
 void Credentials::del_fav( const QString& tab,int id ){
-    if(debg)qDebug()<< "Addfav "<<tab;
+    qDebug()<< "Delfav "<<tab;
     sql_api.set_method( sqlApi::DELETE );
     sql_api.add_table( tab );
     sql_api.add_equ("fav_id",id);
     sql_api.add_equ("user_id",curr_id);
     sql_api.add_insdata( id );
-    fetch_remote();
+    fetch_remote(true);
     emit got_favs();
 }
 void Credentials::add_fav(const QString& tab,int id ){
-    if(debg)qDebug()<< "Addfav "<<tab;
+    qDebug()<< "Addfav "<<tab;
     sql_api.set_method( sqlApi::INSERT );
     sql_api.add_table( tab );
     sql_api.add_default();
     sql_api.add_insdata( curr_id );
     sql_api.add_insdata( id );
-    fetch_remote();
+    fetch_remote(true);
     emit got_favs();
 }
 void Credentials::add_fav_video( int id ){

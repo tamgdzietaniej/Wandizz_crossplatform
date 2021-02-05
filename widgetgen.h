@@ -27,22 +27,22 @@ public:
     // lists
     void share();
     void forceUpdate();
-    void activate(bool);
-    void setMFCorr(int,int);
-    void hideRastered(QWidget*);
+    void activate();
+    bool ftm;
+    QImage im;
     void toggleNavi(bool);
-
+    int oldpy,newpy;
     int inpt_h,brcorr;
+    void setContainer(widget_wrapper*);
     QPointer<topMenuSwitcher> top_menu_switcher;
     void setupTopMenuSwitcher(QRect);
     QInputMethod* input=QApplication::inputMethod();
     void setFrames(QWidget*,QWidget*);
     const QString &currEvent();
-    void setCoords(QRect,int);
-    QIcon star[2];
+    void setCoords(QRect, int);
     double compr;
     QStringList getThumbRef(const QString&, QString);
-    void setDirector(QMainWindow*);
+    void setDirector(QWidget*);
     bool setContext(const QString&);
     void setSelectors(bool force=false);
     QPointer<gLabel>mglsearch(const QString lookfor);
@@ -50,7 +50,7 @@ public:
     QRect get_srect(int),txt_rect,tim_rect;
     QList<QPointer<gLabel>> tmp_list;
     int lb;
-    int br_deleted,iw;
+    int br_deleted,iw,br_deleted_ind;
     const QString& getContext();
     void setupWrapper(QList<QList<QWidget*>>);
     void set_prospect_params(Prospect&);
@@ -79,28 +79,15 @@ public:
     void toggleBricks(bool);
     void toggleBricks();
     int tgs;
-    struct PosterData{
-        int index;
-        QString type;
-        QString file;
-        QString up;
-        QString dn;
-        QString context;
-        int itcnt;
-    };
-    struct PostersReady{
-        int index;
-        QString type;
-        const QImage* poster;
-        QString context;
-    };
+    bool delmutex;
+    int offs;
     PostersReady pr;
-    QParallelAnimationGroup* group;
+    gLabel* fallDown;
+    QSequentialAnimationGroup* group;
     QList<QPropertyAnimation*> del_anim;
     // lists
     QList<PosterData> poster_data;
     QList<PostersReady> poster_data_ready;
-    int lastBrick();
     bool prev_selector;
     QRect brick_geo(int i=-1);
     void toggle(gLabel*,bool,int i=0);
@@ -109,7 +96,6 @@ public:
     int lastVis();
     gLabel* lastVisibleItem();
     int filter_chars;
-    void give_event();
     int getItemsCount();
     bool isExpanded(),catapult_brakes;
     bool pressed;
@@ -133,12 +119,14 @@ public:
     int mrh();
     int msy();
     int mrt();
-    QOpenGLWidget marker_middle,marker_last;
+    void setMRB(bool,int,int,int);
+    bool scan;
     bool isNDis();
     int  corr_y;
     gLabel* fooLab;
+    int wdth,scrr,scr;
+    void restoreCoords();
 private:
-
     int lastvis;
     bool naviDis;
     QMutex _mutex;
@@ -152,15 +140,14 @@ private:
     int fl,lh,lw,_lw,_lw2,lm,vtm,htm;
     bool is_expanded,gen_busy;
     QString context;
-    QFuture<void> future,future1;
+    QFuture<void> future;
     bool fav_mode;
-    QTimer ptimer;
+    QTimer ptimer,updtimer;
     QWidget* director;
     bool debg;
     QList<QPointer<gLabel>> vb,fib,fsb,fvb,msb,foo;
-    int wdth,scrr,scr;
     Qt::Alignment tim_align;
-    QImage *ppi=nullptr,*ppt=nullptr, splash_img;
+    QImage *ppi=nullptr, splash_img;
     QPoint pos, prev_pos, touch_pos;
     QVector2D diff,move;
     int tail_offs;
@@ -169,6 +156,7 @@ private:
     QList<int> q_vscroll;
     bool no_click;
     int get_vscroll(bool e=true);
+    int old;
     enum swipeOrientations{
         not_set,
         horizontal,
@@ -198,24 +186,24 @@ signals:
     void preparing_shutdown(int);
     void filter_done();
     void stopTimer();
+    void set_cnt(int);
     void startTimer();
     void do_poster();
     void closeMenu();
-
+    void timershot(int);
 private slots:
+    void setNextShot(int);
     void  revalidate(QPointer<gLabel>);
-    void poster_generator(int,const QString&,const QString&,const QString&,const QString&,const QString&,int);
+    void poster_generator(int, QString, QString, QString, QString, QString, QString,int);
     void make_poster();
     void noticeShow();
-    void put_poster(int);
     void handleEnter(int,int);
     void handleLeave();
     void timerEv(bool force=false);
 
 public slots:
-    void removeTempData(int);
     void finish_deletion();
-    void brick_remove();
+    void brick_remove(const QString, int);
     void filter(const QString&);
     void filter();
 };

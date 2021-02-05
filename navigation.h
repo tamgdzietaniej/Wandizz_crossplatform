@@ -15,7 +15,6 @@
 #include "menu.h"
 #include "downloader.h"
 #include "downloaderStd.h"
-#include "metasearch.h"
 #include "socialLogin.h"
 #include "myvideosurface.h"
 #include "userPermissions.h"
@@ -27,11 +26,10 @@ public:
     ~navigation();
 
     double opac;
+#if defined(Q_OS_ANDROID)
     userPermissions* uperm;
+#endif
     QString gone_to;
-    QPixmap*vpix;
-    QPixmap bimg;
-    QTimer*ktimer;
     QString carousel_title;
     QString s_curr_id,curr_user,curr_nick,curr_phone;
     QString url_to_load="";
@@ -43,10 +41,11 @@ public:
     //  QThread mthread;
     bool creds_ok=false;
     bool prevent_click;
-    QJsonArray *videos,*fav_videos,*producers,*fav_scenes,*fav_items;
+    QJsonArray *media,*fav_videos,*producers,*fav_scenes,*fav_items;
     void set_user();
     QFuture<void> future;
     QRect shadow_geo;
+    void resetContext();
     bool splash,fresh_run;
     QWidget* parm;
     bool navlock();
@@ -64,13 +63,8 @@ public:
     bool showed;
     int curr_social2=0;
     QThread mythread;
-    bool registering=false;
-    QWidget* tohide=nullptr;
-    void set_favs_cnt(int);
-    QTimer* vt;
-    QTimer* timer=new QTimer(this);
+
     bool save_clicked;
-    QString context;
     bool shadow;
     QString fav_opened;
     void create_fav_items();
@@ -80,7 +74,8 @@ public:
     bool guest_login;
     bool fromfavs;
     bool path_once;
-    int titles_cnt,context_id;
+    int titles_cnt;
+
     QPointer<menu> mmenu=nullptr;
     bool login_logged;
     void init_menu();
@@ -88,7 +83,9 @@ public:
     QPixmap* waiter_anim;
     QLinearGradient gradient,gradient2;
     bool debg;
-    bool is_context();
+    QOpenGLWidget* w;
+    QWidget* rwidget;
+    QStringList prev_cpars,prev_mpars;
 public slots:
     void set_labels();
     void init_app();
@@ -98,16 +95,14 @@ public slots:
     void erase_module();
     void check_email_exists(QString,bool);
     void save_profile();
-    void toggle_input(bool);
     void restart_clean();
     void proceed_sign_in();
     void proceed_webview();
-    bool proceed_media(const QString&,const QStringList& srch={});
+    bool proceed_media(const QString&);
     void proceed_sync();
     void proceed_carousel(const QStringList& params);
     void proceed_userprof();
     void proceed_profsettings(bool acc_recovery=false);
-    void proceed_msearch();
     void update_loc(QString,QString,QString);
     void proceed_gps();
     void proceed_wgen();
@@ -120,7 +115,7 @@ public slots:
     void show_web(QString);
 
 private slots:
-    void showMenu(QPoint);
+    void showMenu();
     void hideMenu();
     void setSocialData(QString,QString,QString,QString,QString);
     void rollin_carousel();
@@ -135,13 +130,12 @@ private slots:
     void show_carousel();
     void exit_app();
     void must_revalidate_widget(int);
-    void enableMenu();
     void updateFavs();
 private:
+    QStringList curr_params;
     bool isCWName(QString);
     void implodeContent();
     QPointer<widgetGen> wgen=nullptr;
-    bool silent;
     downloader* media_queue;
     void show_profsettings();
     void show_module(QWidget* to=nullptr);
@@ -157,11 +151,10 @@ public:
     QPointer<socialLogin> webview=nullptr;
     QPointer<SyncScreen> sync=nullptr;
     QPointer<SignIn> sign_in=nullptr;
-    QPointer<favItems> video=nullptr;
+    QPointer<favItems> videos=nullptr;
     QPointer<userProf> userprof=nullptr;
     QPointer<profSettings> profsettings=nullptr;
     QPointer<localization> gps=nullptr;
-    QPointer<metasearch> msearch=nullptr;
 protected:
     void paintEvent(QPaintEvent*) override;
 

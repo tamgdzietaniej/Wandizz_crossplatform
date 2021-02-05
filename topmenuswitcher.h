@@ -1,3 +1,4 @@
+
 #ifndef TOPMENUSWITCHER_H
 #define TOPMENUSWITCHER_H
 #include "globals.h"
@@ -12,19 +13,24 @@ public:
     bool get_hover(QPoint);
     void showSelectors(bool);
     bool selector_visible;
+    void setPaintCanvas(QImage&);
+    bool srchinited;
     void forceUpdate();
+    void showKB();
     bool ready_to_paint;
     void setSearchMode(bool);
     void setupSearch();
     QLineEdit* edit=nullptr;
     bool isEdit,isEditEn;
     Prospect* par;
-private:
     QPointer<QFrame> sframe;
+private:
+    QImage* canvas;
     bool noanim;
     QList<QWidget*> frames;
     QWidget* currFrameSet;
     QPushButton* b_search;
+    QPushButton* b_clear;
     QRect sgeo;
     bool cv;
 protected:
@@ -33,8 +39,11 @@ protected:
     void resizeEvent(QResizeEvent *e) override;
 signals:
     void textChanged(const QString&);
+    void need_filter();
 private  slots:
-    void   cvtog();
+    void cvtog();
+    void clearEdit();
+    void doUpdate();
 };
 
 #endif // TOPMENUSWITCHER_H

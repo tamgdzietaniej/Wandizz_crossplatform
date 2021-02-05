@@ -21,7 +21,7 @@ public:
     //  bool curr_manager;
     bool exiting;
     QTimer* timer;
-    QStringList urllist;
+    QStringList urllist,surllist;
     void clearList();
     void stop_watchdog();
     struct TaskHelper{

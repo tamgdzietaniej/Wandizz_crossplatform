@@ -88,7 +88,7 @@ public:
 
 };
 
-static QString version="4.3.5.95";
+static QString version="8.3.6.8";
 static QString no_data_string="sorry, bu i haven't got any infrmation about it :(";
 static QString serverRoot="https://producer.wandizz.com";
 static QString update_url=serverRoot+"/apk/";
@@ -127,7 +127,8 @@ static QString f_timeline="timeline/";
 static QString button_ss="border:none;background:transparent;background-image:none;";
 static QString button_ss_act=button_ss+"color:rgb(120, 180, 255);";
 static QString button_ss_nact=button_ss+";color:rgb(80,117, 215);";
-static QString states[2]={button_ss_act,button_ss_nact};
+static QString states[2]={button_ss_nact,button_ss_act};
+static QIcon star[2];
 static bool show_even_if_zero=true;
 static QString loginFBurl="https://producer.wandizz.com/authorize/facebook/index.php";
 static QString loginTWurl="https://producer.wandizz.com/api/twitter_login.php";
@@ -182,6 +183,97 @@ struct Prospect{
     QString search_field_color;
     QString search_text_placeholder;
     int search_height_factor;
+};
+/*
+// bool prospect_osd;
+
+
+struct MediaPlayer{
+    bool enabled=false;
+    int rev_offset=0;
+    int video_duration=4000;
+};
+struct SCarousel{
+    MediaPlayer mediaPlayer;
+} carousel;
+
+
+
+struct Prospect{
+    bool context_has_to_be=false;
+    Osd osd;
+    Search search;
+    VWidget vwidget;
+} prospect;
+*/
+struct Colors{
+    QString text;
+    QString bg;
+    QString buttons;
+};
+struct Sizes{
+    double height_factor;
+    double width_factor;
+    int height;
+    int width;
+};
+struct Content{
+    QString text;
+    QString color;
+    QString bg_color;
+};
+
+struct text_plate{
+    Sizes size;
+    Content content;
+};
+struct Search{
+    int idle_until;
+    bool between_items;
+    bool between_titles;
+    Sizes size;
+    text_plate placeholder;
+    text_plate coming_soon_plate;
+};
+struct VWidget{
+    Sizes sizes;
+};
+struct onScreen{
+    bool show_favs=1;
+    bool toggle_favs=0;
+    bool show_shars=0;
+    bool view_all_at_start=0;
+    bool zooming_glass=1;
+    bool show_all_at_startup=0;
+    bool extra_dimmer=true;
+};
+struct APPL{
+    bool context_has_to_be=false;
+ //   onScreen oscreen;
+  //  Search search;
+ //   VWidget vwidget;
+};
+
+struct PosterData{
+    int index=-1;
+    QString type="";
+    QString Url="";
+    QString file;
+    QString up="";
+    QString dn="";
+    QString context="";
+    int itcnt=0;
+    bool in_dl_queue=false;
+    bool to_dload=false;
+    bool is_splash=true;
+};
+struct PostersReady{
+    int index;
+    QString type;
+    QString file;
+    QImage* poster;
+    QString context;
+    bool ready;
 };
 enum vP{
     OVER= 0,

@@ -18,6 +18,7 @@ public:
     bool context_unlocked;
     bool update_loc();
     sqlApi sql_api,sql_gps;
+    bool is_context();
     bool recov;
     int social_type;
     QByteArray is_raw_data(QList<QByteArray>);
@@ -65,7 +66,7 @@ public:
     void informat(QString);
     int videos_to_unmark;
     QByteArray get_jwt();
-    Prospect prospect_settings;
+        Prospect prospect_settings;
 
 private:
     QJsonArray get_titles();
@@ -89,6 +90,7 @@ private:
     QList<QNetworkReply*> replies;
     int geti(QJsonArray,QString,int i=0);
     QString gets(QJsonArray,QString,int i=0);
+
     int api_ind;
 signals:
     void check_carousel_displayed_fav(int,int);
@@ -115,8 +117,7 @@ signals:
     void close_profsettings();
     void add_query(QUrl);
     void finished();
-
-public slots:
+   public slots:
     void add_fav_item(int);
     void add_fav_scene(int);
     void add_fav_video(int);

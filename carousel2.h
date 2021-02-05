@@ -2,6 +2,7 @@
 #define CAROUSEL_H
 #include "mainwidget.h"
 #include "geofit.h"
+#include<QObject>
 
 namespace Ui {
 class Carousel;
@@ -161,7 +162,7 @@ signals:
     void run_carousel();
     void no_file(int,bool);
     void got_data();
-    void download(QString,QString);
+    void download(const QString&,const QString&);
     void can_process();
     void cant_process();
 };

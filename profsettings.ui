@@ -134,6 +134,7 @@ color:white;
     </property>
     <property name="font">
      <font>
+      <pointsize>13</pointsize>
       <stylestrategy>PreferAntialias</stylestrategy>
      </font>
     </property>
@@ -437,6 +438,7 @@ border:none;
     </property>
     <property name="font">
      <font>
+      <pointsize>13</pointsize>
       <stylestrategy>PreferAntialias</stylestrategy>
      </font>
     </property>
@@ -2534,7 +2536,7 @@ background:rgba(0,0,0,100);
            <string>linked:</string>
           </property>
           <property name="icon">
-           <iconset resource="images.qrc">
+           <iconset>
             <normaloff>:/gui/APP ICONS/Facebook-icon (3).png</normaloff>:/gui/APP ICONS/Facebook-icon (3).png</iconset>
           </property>
           <property name="iconSize">
@@ -2566,7 +2568,7 @@ background:rgba(0,0,0,100);
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap resource="images.qrc">:/gui/APP ICONS/screamer.png</pixmap>
+     <pixmap>:/gui/APP ICONS/screamer.png</pixmap>
     </property>
     <property name="scaledContents">
      <bool>true</bool>

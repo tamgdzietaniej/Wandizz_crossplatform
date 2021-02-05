@@ -2,6 +2,8 @@ QT       += core gui network opengl quick qml quickwidgets  gui-private
 lessThan(QT_MAJOR_VERSION,6): QT += widgets multimedia multimediawidgets webview positioning
 CONFIG +=  mobility localization
 CONFIG += c++11
+CONFIG += QMAKE_LFLAGS_CONSOLE
+CONFIG += QMAKE_CFLAGS_WARN_OFF
 TEMPLATE = app
 TARGET= WANDIZZ
 
@@ -10,6 +12,7 @@ DEFINES += QT_DEPRECATED_WARNINGS \
             VER=2349 \
             VER_STRING='2-3-4-9'
 SOURCES += main.cpp \
+    appinspector.cpp \
     audiorecorder.cpp \
     aws_api.cpp \
     audiolevel.cpp \
@@ -43,10 +46,11 @@ SOURCES += main.cpp \
     userprof.cpp \
     widget_wrapper.cpp \
     widgetgen.cpp \
-    write_buffers.cpp \
-    metasearch.cpp
+    write_buffers.cpp# \
+   # metasearch.cpp
 
 HEADERS += \
+    appinspector.h \
 audiolevel.h \
     acr_api.h \
     audiorecorder.h \
@@ -81,12 +85,12 @@ audiolevel.h \
     userprof.h \
     widget_wrapper.h \
     widgetgen.h \
-    write_buffers.h \
-    metasearch.h
+    write_buffers.h# \
+   # metasearch.h
 
 FORMS += \
     menu.ui \
-    metasearch.ui \
+   # metasearch.ui \
     signin.ui \
     splash.ui \
     syncscreen.ui \
@@ -112,6 +116,7 @@ QMAKE_TARGET_BUNDLE_PREFIX=WANDIZZ
 QMAKE_ASSET_CATALOGS += Media.xcassets
 QMAKE_BUNDLE_DATA += ios_icon
 QMAKE_BUNDLE=WANDIZZ
+CURRENT_IOS_PROJECT_VERSION=6.8
 CURRENT_IOS_SDK_VERSION=13.2
 #OBJECTIVE_SOURCES += shareios.mm
 app_launch_images.files += $$files($$PWD/gui/splash/*)
@@ -155,5 +160,9 @@ DISTFILES += \
     android/src/wandizz/shares.java \
     android/src/wandizz/shares/shares.java
 }
+
+DISTFILES += \
+    gui/APP ICONS/android/android-contact 13.09.56 13.09.56 13.09.56 13.09.56 13.09.56.png \
+    gui/icons/avatar_mini.png
 
 

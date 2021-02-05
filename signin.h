@@ -13,7 +13,7 @@ class SignIn : public QMainWindow
 public:
     explicit SignIn(QWidget *parent = nullptr);
     ~SignIn() override;
-
+    void init();
 private:
     Ui::SignIn *ui;
 

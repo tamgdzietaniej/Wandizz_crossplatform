@@ -52,7 +52,6 @@ void geofit::resizer(QWidget* m_widget,bool mode){
 }
 
 void geofit::init(){
-   // qDebug()<<"GEOFIT:"<<QApplication::primaryScreen()->availableGeometry()<<QApplication::primaryScreen()->availableVirtualGeometry()<<QApplication::primaryScreen()->geometry()<<QApplication::primaryScreen()->virtualGeometry();
     fixed=true;  // if you want to have MinMax sizes setted
     resize_container_height=true;
     set_container_height=0;
@@ -61,11 +60,11 @@ void geofit::init(){
 }
 QRect geofit::update_geo(bool mode){
 #if defined(Q_OS_IOS)
-    m_geo=QApplication::primaryScreen()->geometry();
+    m_geo=QApplication::desktop()->geometry();
 #elif defined(Q_OS_ANDROID)
     m_geo=QApplication::primaryScreen()->virtualGeometry();
 #elif defined (Q_OS_MACX)
-m_geo=QApplication::primaryScreen()->geometry();
+    m_geo=QApplication::primaryScreen()->geometry();
 #endif
     v_marg=m_geo.y();
     sX=m_geo.x();
@@ -77,6 +76,7 @@ m_geo=QApplication::primaryScreen()->geometry();
         marg=(sW-sH*0.6)/2;
         sW=sH*0.6;
     }
+    return m_geo;
 }
 geofit::~geofit(){
     //  qDebug()<<"~geofit()";

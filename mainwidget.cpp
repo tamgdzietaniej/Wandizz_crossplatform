@@ -12,6 +12,7 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
     setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_DeleteOnClose,true);
+    setAttribute(Qt::WA_DeleteOnClose,true);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
     setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
     setMouseTracking(true);
@@ -41,6 +42,7 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     clustered=false;
     trip=0;
     pos=QPoint(0,0);
+    img.load(":/gui/BANNERS/wandizz_trnsp.png");
     prev_pos=QPoint(0,0);
     diff.setX(0);
     pressed=false;
@@ -54,29 +56,27 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     sscroling=false;
     hscroll_iner=0;
     slave=true;
+    settin=false;
     first_frame=true;
     timer=new QTimer(this);
     connect(timer,SIGNAL(timeout()),this,SLOT(timerev()),Qt::QueuedConnection);
+    connect(this,SIGNAL(go_update()),this,SLOT(update()),Qt::QueuedConnection);
+    connect(this,SIGNAL(timershot(int)),this,SLOT(setNextShot(int)),Qt::QueuedConnection);
     rotate_to_element=-1;
     pressed=false;
     marker_left=new QWidget(this);
-    forbid.load(":/gui/APP ICONS/forbid2.png");
+    forbid.load(":/gui/APP ICONS/forbid.png");
     forbid.setDevicePixelRatio(dpi);
     type=tp;
+    img=img.scaled(msize*.8*dpi);
     QSize _bsize(20*dpi*2,20*dpi*2);
-    b_fav_image[0]=QPixmap(":/gui/ICONS_FAVS/fav5grays.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_fav_image[1]=QPixmap(":/gui/ICONS_FAVS/fav5.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_play_image[0]=QPixmap(":/gui/buttons/play_3.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_play_image[1]=QPixmap(":/gui/buttons/play_2_d.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_pause_image=QPixmap(":/gui/APP ICONS/pause.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_volume_image[0]=QPixmap(":/gui/buttons/unmute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    b_volume_image[1]=QPixmap(":/gui/buttons/mute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
-    setAttribute(Qt::WA_AlwaysStackOnTop,true);
-    setAttribute(Qt::WA_DeleteOnClose,true);
-    setAttribute(Qt::WA_TranslucentBackground);
-    setAttribute(Qt::WA_OpaquePaintEvent);
-    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
-    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
+    b_fav_image[0]=QImage(":/gui/ICONS_FAVS/fav5grays.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_fav_image[1]=QImage(":/gui/ICONS_FAVS/fav5.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_play_image[0]=QImage(":/gui/buttons/play_3.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_play_image[1]=QImage(":/gui/buttons/play_2_d.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_pause_image=QImage(":/gui/APP ICONS/pause.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_volume_image[0]=QImage(":/gui/buttons/unmute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+    b_volume_image[1]=QImage(":/gui/buttons/mute.png").scaled(_bsize,Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
 }
 
 void MainWidget::set_slave(){
@@ -91,22 +91,26 @@ void MainWidget::resizeEvent(QResizeEvent *e){
     if(!type)msize=QSize(e->size().height()*1.76,e->size().height());
     else msize=QSize(e->size().height()+2,e->size().height());
     update();
+    img.setDevicePixelRatio(dpi);
     e->accept();
 }
 void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,QList<int> favss){
     favs=favss;
     netfile=netf;
-    left_offset=viewport.width()/2-siz.width()/2;
+    left_offset=rect().width()/2-siz.width()/2;
     marker_left->setGeometry(0,0,left_offset,siz.height());
     marker_left->setFixedSize(left_offset,siz.height());
     prev_time=-1;
     par_idx=0;
     msize=siz;
-    img=QPixmap(":/gui/BANNERS/wandizz_trnsp.png").scaled(siz,Qt::KeepAspectRatio,Qt::SmoothTransformation);
-    beg_h=msize.height();
-    beg_y=mapToGlobal(QPoint(0,0)).y();
+    img.setDevicePixelRatio(dpi);
+    bw=msize.width()*.3;
+    bh=msize.height()*.3;
+    by=msize.height()*.7;
+    bx=left_offset+msize.width()*.7;
+
     button_rect.setRect(left_offset+msize.width()-30,msize.height()-30,25,25);
-    button2_rect.setRect(left_offset+msize.width()-50,msize.height()-50,50,50);
+    button2_rect.setRect(bx,by,bw,bh);
     volume_rect.setRect(left_offset+msize.width()-70,msize.height()-27,17,18);
     volume2_rect.setRect(left_offset+msize.width()-90,msize.height()-50,50,50);
     ww=siz.width();
@@ -124,40 +128,43 @@ void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,Q
             if(type==0){
                 if(clustered)last_assigned[par_idx-1]=i-1;
             }
-            widget[par_idx].image=&img;
-            widget[par_idx].image->setDevicePixelRatio(dpi);
-            clustered=false;
-            cluster[i]=par_idx;
-            last_assigned[par_idx]=i;
             if(type)
                 filename[par_idx]=ed[i].item_file;
             else
                 filename[par_idx]=ed[i].frame_file;
+            bool fx=QFileInfo::exists(filename[par_idx]);
+            slide[par_idx].image=&img;
+            slide[par_idx].image->setDevicePixelRatio(dpi);
+            slide[par_idx].shown=false;;
+            slide[par_idx].waiting_swap=false;
+            cluster[i]=par_idx;
+            last_assigned[par_idx]=i;
             if(type==0){
                 first_assigned[par_idx]=i;
             }
             ev_data[par_idx]=ed[i];
             prev_time=ed[i].etime;
-            widget[par_idx].loaded=1;
+
             if(objectName()=="sceneframe")
-                widget[par_idx].is_fav=favs.contains(ev_data[par_idx].scene_id);
+                slide[par_idx].is_fav=favs.contains(ev_data[par_idx].scene_id);
             else {
-                qDebug()<<"CHECK:"<<ed[i].item_id<<ev_data[par_idx].item_id<<favs.contains(ev_data[par_idx].item_id);
-                                widget[par_idx].is_fav=favs.contains(ev_data[par_idx].item_id);
+                if(debg)qDebug()<<"CHECK:"<<ed[i].item_id<<ev_data[par_idx].item_id<<favs.contains(ev_data[par_idx].item_id);
+                slide[par_idx].is_fav=favs.contains(ev_data[par_idx].item_id);
             }
             last_created=par_idx;
             par_idx++;
             items=par_idx;
-            if(dodebug)if(debg)qDebug()<<"make widget:"<<par_idx;
+            if(debg)qDebug()<<"make widget:"<<par_idx;
         }
+        aspect=Qt::KeepAspectRatio;
+        if(!type)aspect=Qt::IgnoreAspectRatio;
     }
-    aspect=Qt::KeepAspectRatio;
-    if(!type)aspect=Qt::IgnoreAspectRatio;
+    qDebug()<<"ITEMS:"<<len<<items<<par_idx;
 }
 void MainWidget::set_favs(){
     for(int i=0;i<items;i++){
-        if(objectName()=="sceneframe")widget[i].is_fav=favs.contains(ev_data[i].scene_id);
-        if(objectName()=="itemframe")widget[i].is_fav=favs.contains(ev_data[i].item_id);
+        if(objectName()=="sceneframe")slide[i].is_fav=favs.contains(ev_data[i].scene_id);
+        if(objectName()=="itemframe")slide[i].is_fav=favs.contains(ev_data[i].item_id);
     }
 }
 void MainWidget::mouseMoveEvent(QMouseEvent *e){
@@ -207,26 +214,37 @@ void MainWidget::paintGL(){
     QPainter painter(this);
     painter.beginNativePainting();
     glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(0,0,0,0);
     painter.endNativePainting();
+    painter.fillRect(rect(),QColor(0,0,0,0));
+    double sc=mw_geo.center().x()-geometry().x();
     int offs=marker_left->geometry().right();
     QRect geo=QRect(mw*msize.width()+offs+left_offset,0,wsize.width(),wsize.height());
     for(int i=0;i<=last_created;i++){
         if(is_video_frame && i==mw ){
             if(!vim.isNull())
-                painter.drawPixmap(mw_geo.topLeft(),vim,widget[mw].image->rect());
+                painter.drawImage(mw_geo.topLeft(),vim,slide[mw].image->rect());
             else {
                 if(debg)qDebug()<<"NULL IMAGE!!";
                 is_video_frame=false;
             }
         }
+        /* WIDGET PAINTING */
         if(!is_video_frame){
-            ox=(msize.width()-widget[i].image->width()/dpi)/2;
-            y=(msize.height()-widget[i].image->height()/dpi)/2;
-            w=widget[i].image->width()/dpi;
-            h=widget[i].image->height()/dpi;
+            if(slide[i].waiting_swap){
+                //  qDebug()<<"PAINT SWAP:"<<slide[i].image<<slide[i].swap_img<<type;
+                slide[i].image=static_cast<QImage*>(slide[i].swap_img);
+                slide[i].image->setDevicePixelRatio(dpi);
+                qDebug()<<"SWAP:"<<i<<mw;
+                slide[i].waiting_swap=false;
+            }
+            ox=(msize.width()-slide[i].image->width()/dpi)/2;
+            y=(msize.height()-slide[i].image->height()/dpi)/2;
+            w=slide[i].image->width()/dpi;
+            h=slide[i].image->height()/dpi;
             x=i*msize.width()+offs+ox;
             geo=QRect(x,y,w,h);
-            QRect srect=widget[i].image->rect();
+            QRect srect=slide[i].image->rect();
             if(geo.right()>0 && geo.left()<width()){
                 if(geo.left()<0){
                     srect.adjust(geo.left(),0,0,0);
@@ -238,14 +256,11 @@ void MainWidget::paintGL(){
                 }
                 int l=i*msize.width()+offs;
                 int r=(i+1)*msize.width()+offs;
-                painter.drawPixmap(geo.topLeft(),*widget[i].image,srect);
+                painter.drawImage(geo.topLeft(),*slide[i].image,srect);
                 painter.setBrush(QColor(0,0,0,255));
+                painter.setPen(QColor(0,0,0,255));
                 if(l>0 && l<width())painter.drawLine(l,0,l,height());
                 if(r>0 && r<width())painter.drawLine(r,0,r,height());
-                if(widget[i].loaded==2){
-                    widget[i].loaded=3;
-                    qDebug()<<"Widget loaded:paint-loaded to 3";
-                }
             }
         }
     }
@@ -260,16 +275,16 @@ void MainWidget::paintGL(){
             painter.drawText(play_rect.center(),pinfo);
         } else {
             if(is_playing()){
-                painter.drawPixmap(play_rect,b_pause_image,b_play_image[0].rect());
-                painter.drawPixmap(volume_rect,b_volume_image[player->isMuted()],b_volume_image[0].rect());
+                painter.drawImage(play_rect,b_pause_image,b_play_image[0].rect());
+                painter.drawImage(volume_rect,b_volume_image[player->isMuted()],b_volume_image[0].rect());
             }
             else {
-                painter.drawPixmap(play_rect,b_play_image[1],b_play_image[0].rect());
+                painter.drawImage(play_rect,b_play_image[1],b_play_image[0].rect());
             }
 
         }
     }
-    painter.drawPixmap(button_rect,b_fav_image[widget[mw].is_fav],b_fav_image[widget[mw].is_fav].rect());
+    painter.drawImage(button_rect,b_fav_image[slide[mw].is_fav],b_fav_image[slide[mw].is_fav].rect());
     //}
     painter.end();
     need_update=false;
@@ -279,48 +294,11 @@ void MainWidget::mouseReleaseEvent(QMouseEvent *e){
     p_stop_emitted=false;
     if(items==0 || mw<0)return;
     pressed=false;
-    if(!scroll_locked){
-        int i,v=0,ii=0;
-        int vv=0;
-        if(diffs.count()>0){
-            for(i=0;i<diffs.count();i++){
-                if(abs(v)<abs(diffs.at(i))){
-                    v=diffs.at(i);
-                }
-                vv+=diffs.at(i);
-                if(diffs.at(i)!=0)ii++;
-            }
-            if(ii!=0)
-                hscroll_iner=vv/ii;
-            diffs.clear();
-        }
-        scrolled=false;
-        if(abs(get_trip_to(mw))<2 && hscroll_iner==0.0 && type && !scroll_locked){
-            emit go_web(ev_data[mw].event);
-        } else {
-            scrolling=true;
-        }
+    if(abs(get_trip_to(mw))>2){
+        scrolled=true;
     }
-    scroll_locked=false;
-    sscroling=false;
-}
-void MainWidget::mousePressEvent(QMouseEvent *e){
-    start_bg_proc();
-    if(dodebug)if(debg)qDebug()<<"TIMEREV:Start timer";
-    if(items==0 || mw<0)return;
-    if(mw==-1){
-        if(dodebug)if(debg)qDebug()<<"MW=-1 return";
-        return;
-    }
-    p_stop_emitted=false;
-    unset_slave();
-    if(objectName()=="itemframe")emit stop_p();
-    pressed=true;
-    catapult=0;
-    scr=0;
-    rotate_to_element=-1;
-    scroll_locked=false;
-    if(!scrolling){
+    if(scroll_locked){
+        /* PLAYER MANAGEMENT */
         if(type==0 && player_enabled){
             if(debg)qDebug()<<"VOL:"<<volume2_rect.contains(e->pos())<<volume2_rect<<e->pos();
             if(is_playing()){
@@ -339,16 +317,45 @@ void MainWidget::mousePressEvent(QMouseEvent *e){
                 }
             }
         }
-        if(button2_rect.contains(e->pos())){
-            if(dodebug)if(debg)qDebug()<<"ADD FAV CLICK";
-            emit add_fav_click();
-            widget[mw].is_fav=!widget[mw].is_fav;
-            scroll_locked=true;
-            update();
+    } else{
+        if(scrolled){
+            int i,v=0,ii=0;
+            int vv=0;
+            if(diffs.count()>0){
+                for(i=0;i<diffs.count();i++){
+                    if(abs(v)<abs(diffs.at(i))){
+                        v=diffs.at(i);
+                    }
+                    vv+=diffs.at(i);
+                    if(diffs.at(i)!=0)ii++;
+                }
+                if(ii!=0)
+                    hscroll_iner=vv/ii;
+                diffs.clear();
+            }
+            scrolled=false;
+            if(abs(get_trip_to(mw))<2 && hscroll_iner==0.0 && type && !scroll_locked){
+                emit go_web(ev_data[mw].event);
+            } else {
+                scrolling=true;
+            }
+        } else {
+            /* ADD FAV BUTTON CLICK */
+            if(button2_rect.contains(e->pos())){
+                if(dodebug)if(debg)qDebug()<<"ADD FAV CLICK";
+                emit add_fav_click();
+                slide[mw].is_fav=!slide[mw].is_fav;
+                scroll_locked=true;
+                update();
+            }
         }
-
     }
-    scrolled=scrolling;
+    scroll_locked=false;
+    sscroling=false;
+}
+void MainWidget::mousePressEvent(QMouseEvent *e){
+    if(items==0 || mw<0)return;
+    qDebug()<<"Muse press";
     prev_pos=e->pos();
     press_pos=prev_pos;
     pos=prev_pos;
@@ -357,17 +364,25 @@ void MainWidget::mousePressEvent(QMouseEvent *e){
     slave=false;
     diff.setX(0);
     diffs.clear();
+    p_stop_emitted=false;
+    unset_slave();
+    if(objectName()=="itemframe")emit stop_p();
+    pressed=true;
+    catapult=0;
+    scr=0;
+    rotate_to_element=-1;
+    scroll_locked=false;
+    scrolled=scrolling;
+    start_bg_proc();
 }
 void MainWidget::timerev(bool st){
-    if(scr!=0){
-        qDebug()<<"SCR:"<<scr;
-    }
     if(items==0 || lock==true){
         qDebug()<<"Items:0";
         return;
     }
     get_coords();
-    if(no_move)last_zeros++;
+    if(!all_loaded)
+        if(no_move)last_zeros++;
     if(last_zeros>=10){
         diffs.clear();
         last_zeros=0;
@@ -383,10 +398,10 @@ void MainWidget::timerev(bool st){
                     rotate_to_element=rw+(1*(-hscroll_iner>gt));
                 } else
                     if(hscroll_iner>0 && gt<0){
-                        rotate_to_element=lw-(1*(hscroll_iner>-gt));
-                    } else {
-                        rotate_to_element=mw;
-                    }
+                    rotate_to_element=lw-(1*(hscroll_iner>-gt));
+                } else {
+                    rotate_to_element=mw;
+                }
             } else {
                 hscroll_iner*=0.94+(fabs(catapult)/right)*0.04;
                 scr+=hscroll_iner;
@@ -396,32 +411,28 @@ void MainWidget::timerev(bool st){
             hscroll_iner/=4;
             rotate_to_element=mw;
         }
-    }
-    int trip=get_trip_to(mw);
-    if(abs(trip)<40){
-        if(rotate_to_element!=-1 && trip!=prev_dist){
-            prev_dist=trip;
+
+        int trip=get_trip_to(mw);
+        if(abs(trip)<40){
+            if(rotate_to_element!=-1 && trip!=prev_dist){
+                prev_dist=trip;
+            }
         }
-    }
-    // Autorotation
-    if(rotate_to_element!=-1){
-        trip=get_trip_to(rotate_to_element);
-        hscroll_iner=0;
-        hscroll_autopilot=asqrt(trip);//*(fabs(asqrt(trip)/5));
-        if(abs(trip)<=4)
-            hscroll_autopilot=trip;
-        if(trip==0){
-            rotate_to_element=-1;
+        // Autorotation
+        if(rotate_to_element!=-1){
+            trip=get_trip_to(rotate_to_element);
+            hscroll_iner=0;
+            hscroll_autopilot=asqrt(trip);//*(fabs(asqrt(trip)/5));
+            if(abs(trip)<=4)
+                hscroll_autopilot=trip;
+            if(trip==0){
+                rotate_to_element=-1;
+            }
+            scr+=hscroll_autopilot;
         }
-        scr+=hscroll_autopilot;
-        //    if(scr!=0){
-        //      if(b_opacity!=0){
-        //          b_opacity=0;
-        //      }
     }
     scrolling=abs(scr)>2;
     if(scr!=0){
-        if(debg)qDebug()<<"scroll:"<<scr;
         scroll(scr,0);
         seeked=false;
     } else {
@@ -429,7 +440,7 @@ void MainWidget::timerev(bool st){
         //     if(b_opacity!=1 && !pressed){
         if(!pressed){
             //       b_opacity=1;
-            needs_update();
+            //      needs_update();
             if( emited!=mw && !slave ){
                 emited=mw;
                 emit spin_friend( mw );
@@ -448,8 +459,7 @@ void MainWidget::timerev(bool st){
     if(st){
         if(!timer->isActive())timer->start(17);
     } else {
-        if(!need_update && scr==0 && !pressed && rotate_to_element==-1 && all_loaded && timer->isActive() && !scrolling){
-            if(dodebug)if(debg)qDebug()<<"TIMER STOP:TIMEREV";
+        if(!need_update && scr==0 && !pressed && rotate_to_element==-1 && timer->isActive() && !scrolling){
             timer->stop();
         }
     }
@@ -459,18 +469,17 @@ qreal MainWidget::get_trip_to(int tr){
     return left+bleft-tr*msize.width();
 }
 bool MainWidget::set_trip_to(int t){
-    qDebug()<<"Rol :"<<lw<<mw<<rw;
     if(mw<0)return false;;
     int tr=t;
     if(type==0){
         tr=cluster[t];
     }
     if(tr==mw || tr==rotate_to_element)return false;
-    if(debg)qDebug()<<"type:"<<type<<" rolling:"<<t;
     rotate_to_element=tr;
     start_bg_proc();
     return true;
 }
+
 void MainWidget::get_coords(){
     // lw, [mw], rw - left, middle, right indexes of visible widgets ( 0 -> first)
     // [mw] - nearest middle position
@@ -490,56 +499,44 @@ void MainWidget::get_coords(){
     if(mw<0)mw=0;
     if(lw<0)lw=0;
     if(rw<0)rw=0;
-    if(!all_loaded){
-        //      qDebug()<<"loading:all_loaded:"<<all_loaded<<total_loaded<<items<<last_created;
-        if(++processing>last_created){
-            processing=0;
-            loop=true;
-        }
-        int genw=-1;
-        if(widget[mw].loaded<2)
-            genw=mw;
-        else if(widget[processing].loaded<2)
-            genw=processing;
-        if(genw>-1 && !lock){
-            futures.append(QtConcurrent::run([=]() {
-                QMutexLocker {&_mutex};
-                if(all_loaded) return ;
-                if(debg)qDebug()<<"begin loaded:SETTING:"<<all_loaded<<items<<total_loaded<<genw;
+}
+void MainWidget::getPics(){
+    future=QtConcurrent::run([=]() {
+        for(int genw=0;genw<items;genw++){
+            if(!slide[genw].shown){
                 if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
                 if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
-                    widget[genw].loaded=2;
-                    QPixmap tmpimage;
-                    tmpimage.load(filename[genw]);
-                    widget[genw].image=new QPixmap(tmpimage.scaled(msize,aspect,Qt::SmoothTransformation));
-                    widget[genw].image->setDevicePixelRatio(dpi);
-                    if(pdodebug)if(debg)qDebug()<<"Loaded image:"<<widget[genw].image->size()<<widget[genw].image->size()<<filename[genw]<<","<<genw;
+                    if(type)qDebug()<<"loading:all_loaded:"<<all_loaded<<total_loaded<<items<<last_created;
+                    QImage i(filename[genw]);
+                    slide[genw].swap_img=new QImage(i.scaled(msize,aspect,Qt::SmoothTransformation));
+                    slide[genw].image->setDevicePixelRatio(dpi);
+                    qDebug()<<"Loaded image:"<<slide[genw].swap_img->size()<<msize;
                     need_update=true;
+                    all_loaded=total_loaded==last_created+1;
                     total_loaded++;
-                    all_loaded=(total_loaded==items);
-                    qDebug()<<"end:loaded:SETTING:"<<all_loaded<<items<<total_loaded<<genw;
-
+                    qDebug()<<"Loaded image:"<<total_loaded<<last_created+1;
+                    slide[genw].shown=true;
+                    slide[genw].waiting_swap=true;
+                    emit go_update();
+                    if(all_loaded)qDebug()<<"ALL LOADED!";
+                    break;
                 }
-            }));
-            //   } else {
-            //    processing--;
+            }
         }
-    }
+        if(!all_loaded)
+            emit timershot(50);
+    });
 }
+void MainWidget::setNextShot(int t){
+    QTimer::singleShot(t, this, SLOT(getPics()));
+}
+
 MainWidget::~MainWidget(){
-    lock=true;
     timer->stop();
-    QApplication::processEvents();
-    future.waitForFinished();
-    if(debg)qDebug()<<"WAND:MAINWIDGET:DESTRuctor mainwidget";
     if(is_playing())player->stop();
-    int cn=0;
-    while(!futures.isEmpty()){
-        qDebug()<<"Waiting for future"<<cn;
-        QFuture<void> f=futures.takeFirst();
-        f.cancel();
-        f.waitForFinished();
-    }
+    future.cancel();
+    future.waitForFinished();
+    qDebug()<<"WAND:MAINWIDGET:DESTRuctor mainwidget";
 }
 
 /*  PLAYER SECTION */
@@ -590,10 +587,10 @@ void MainWidget::play(){
     playing=true;
     is_video_frame=false;
     int offs=marker_left->geometry().right();
-    x=(msize.width()-widget[mw].image->width()/dpi)/2;
-    y=(msize.height()-widget[mw].image->height()/dpi)/2;
-    w=widget[mw].image->width()/dpi;
-    h=widget[mw].image->height()/dpi;
+    x=(msize.width()-slide[mw].image->width()/dpi)/2;
+    y=(msize.height()-slide[mw].image->height()/dpi)/2;
+    w=slide[mw].image->width()/dpi;
+    h=slide[mw].image->height()/dpi;
     mw_geo=QRect(mw*msize.width()+offs+x,y,w,h);
     last_frame=false;
     catch_stop=false;
@@ -603,6 +600,7 @@ void MainWidget::play(){
     start_bg_proc();
 }
 void MainWidget::start_bg_proc(){
+    if(!all_loaded)getPics();
     if(!timer->isActive())timerev(true);
 }
 void MainWidget::seek(qint64 curr_pos,bool){
@@ -651,7 +649,7 @@ void MainWidget::setImage(const QImage& im,bool swrgb){
             if(debg)qDebug()<<"Media PLAYER:Transport START - IMG PARAMS:"<<im.size()<<","<<im.size()<<","<<im.depth();
         first_frame=false;
     }
-    vim=QPixmap::fromImage(im.scaled(msize,Qt::IgnoreAspectRatio));
+    vim=im.scaled(msize,Qt::IgnoreAspectRatio);
     if(player->position()>end_time || !is_playing() || catch_stop){
         if(catch_stop){
             if(pdodebug)if(debg)qDebug()<<"CATCH STOP LAST FRAME";
@@ -680,11 +678,11 @@ void MainWidget::state_changed(QMediaPlayer::State state){
         needs_update();
     } else
         if(state==QMediaPlayer::PlayingState ){
-            playing=true;
-            if(pdodebug)if(debg)qDebug()<<"Media PLAYER:Re-init start flag and counter";
-            first_frame=true;
-            frames_cnt=0;
-        }
+        playing=true;
+        if(pdodebug)if(debg)qDebug()<<"Media PLAYER:Re-init start flag and counter";
+        first_frame=true;
+        frames_cnt=0;
+    }
 }
 void MainWidget::media_buffer_filled_info(int perc){
     if(prev_buffer!=perc){
@@ -713,6 +711,7 @@ bool MainWidget::perform_close(){
         if(debg)qDebug()<<"Stopping surface";
         QApplication::processEvents();
     }
-
+    future.cancel();
+    future.waitForFinished();
     return true;
 }

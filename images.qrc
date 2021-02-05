@@ -2,39 +2,20 @@
     <qresource prefix="/">
         <file>gui/amazon-logo_black.png</file>
         <file>gui/icons/avatar_mini.png</file>
-        <file>gui/icons/phone.png</file>
         <file>gui/icons/video.png</file>
         <file>gui/icons/notifications.png</file>
         <file>gui/icons/favourites.png</file>
         <file>gui/background/sync.png</file>
-        <file>gui/background/generic.png</file>
         <file>gui/background/rings.png</file>
-        <file>gui/background/generic_shadow.png</file>
-        <file>gui/background/shadow.png</file>
         <file>gui/icons/icon_locker.png</file>
-        <file>gui/icons/close.png</file>
-        <file>gui/icons/close_black.png</file>
-        <file>gui/buttons/photobutt.png</file>
-        <file>gui/buttons/photobuttpressed.png</file>
         <file>gui/icons/logout.png</file>
-        <file>gui/ICONS_FAVS/fav_add_deny.png</file>
-        <file>gui/BANNERS/coming-soon.png</file>
-        <file>gui/icons/icons8-filled_circle_filled.png</file>
         <file>gui/icons/messaging2.png</file>
-        <file>gui/icons/movie.png</file>
-        <file>gui/icons/red_dot.png</file>
         <file>gui/icons/search2.png</file>
         <file>gui/icons/settings2.png</file>
-        <file>gui/BANNERS/coming-soon-icon.png</file>
-        <file>gui/BANNERS/film_tape.png</file>
-        <file>gui/BANNERS/film_tape_sep.jpg</file>
-        <file>gui/icons/video2.png</file>
         <file>gui/ICONS_FAVS/fav5.png</file>
-        <file>gui/ICONS_FAVS/fav5gray.png</file>
         <file>gui/icons/shopping_cart.png</file>
         <file>gui/icons/exit.png</file>
         <file>gui/background/splash.png</file>
-        <file>gui/background/twitter_final.png</file>
         <file>gui/icons/launch/logo29x29.png</file>
         <file>gui/icons/launch/logo3.png</file>
         <file>gui/icons/launch/logo58.png</file>
@@ -44,23 +25,15 @@
         <file>gui/icons/launch/logo_app.gif</file>
         <file>gui/icons/launch/logo_app.png</file>
         <file>gui/icons/launch/share_wandizz.png</file>
-        <file>gui/icons/database.png</file>
-        <file>gui/icons/locker.jpg</file>
         <file>gui/splash/Launch-568h@2x.png</file>
         <file>gui/splash/launch.png</file>
         <file>gui/splash/Launch.xib</file>
         <file>gui/logo-Youtube.png</file>
         <file>gui/icons/arrow-left.png</file>
         <file>gui/icons/browse.gif</file>
-        <file>gui/icons/arrow-left.jpg</file>
         <file>gui/background/item.png</file>
-        <file>gui/icons/eye.png</file>
         <file>gui/ICONS_FAVS/fav5grays.png</file>
         <file>gui/SHARE ICONS/share.png</file>
-        <file>gui/buttons/play_2.png</file>
-        <file>gui/buttons/play_2_d.png</file>
-        <file>gui/ICONS_TRASH/trashcan.png</file>
-        <file>gui/icons/avatar.png</file>
         <file>gui/icons/camera.png</file>
         <file>gui/icons/icon_phone.png</file>
         <file>gui/icons/undo.png</file>
@@ -73,105 +46,42 @@
         <file>gui/icons/green_dot.png</file>
         <file>gui/icons/green_dot_no_dot.png</file>
         <file>gui/BANNERS/wait.gif</file>
-        <file>gui/BANNERS/login_with_fb.png</file>
-        <file>gui/BANNERS/facebook3d.png</file>
-        <file>gui/BANNERS/sign_in_twitter.png</file>
-        <file>gui/BANNERS/twitter3d.png</file>
         <file>gui/buttons/play_3.png</file>
         <file>gui/icons/green_star.png</file>
         <file>gui/ICONS_FAVS/green_star.png</file>
         <file>gui/icons/google-icon.png</file>
-        <file>gui/icons/Social-Network-Facebook-icon.png</file>
-        <file>gui/icons/Twitter-2-icon.png</file>
         <file>gui/icons/Twitter-icon (1).png</file>
-        <file>gui/APP ICONS/android/android-contact.png</file>
-        <file>gui/APP ICONS/android/android-folder.png</file>
-        <file>gui/APP ICONS/android/android-search.png</file>
-        <file>gui/APP ICONS/android/android-settings.png</file>
-        <file>gui/APP ICONS/android/android-share.png</file>
-        <file>gui/APP ICONS/android/android-social.png</file>
-        <file>gui/APP ICONS/android/android-star.png</file>
-        <file>gui/APP ICONS/android/android-system-back.png</file>
-        <file>gui/APP ICONS/ios/ios7-bell.png</file>
-        <file>gui/APP ICONS/ios/ios7-bookmarks.png</file>
-        <file>gui/APP ICONS/ios/ios7-contact.png</file>
         <file>gui/APP ICONS/ios/ios7-email.png</file>
-        <file>gui/APP ICONS/ios/ios7-film.png</file>
         <file>gui/APP ICONS/ios/ios7-folder.png</file>
         <file>gui/APP ICONS/ios/ios7-gear.png</file>
-        <file>gui/APP ICONS/ios/ios7-home.png</file>
-        <file>gui/APP ICONS/ios/ios7-locked.png</file>
         <file>gui/APP ICONS/ios/ios7-person.png</file>
         <file>gui/APP ICONS/ios/ios7-search-strong.png</file>
         <file>gui/APP ICONS/ios/ios7-search.png</file>
-        <file>gui/APP ICONS/ios/ios7-settings.png</file>
         <file>gui/APP ICONS/ios/ios7-star.png</file>
         <file>gui/APP ICONS/ios/ios7-telephone.png</file>
         <file>gui/APP ICONS/ios/ios7-videocam.png</file>
-        <file>gui/APP ICONS/ios/log-in.png</file>
         <file>gui/APP ICONS/ios/log-out.png</file>
-        <file>gui/APP ICONS/ios/social-apple.png</file>
-        <file>gui/APP ICONS/bookmark.png</file>
-        <file>gui/APP ICONS/cloud.png</file>
-        <file>gui/APP ICONS/filing.png</file>
         <file>gui/APP ICONS/film-marker.png</file>
-        <file>gui/APP ICONS/folder.png</file>
-        <file>gui/APP ICONS/gear-a.png</file>
-        <file>gui/APP ICONS/icon-social-google-plus-outline.png</file>
         <file>gui/APP ICONS/locked.png</file>
         <file>gui/APP ICONS/person.png</file>
-        <file>gui/APP ICONS/power.png</file>
         <file>gui/APP ICONS/search.png</file>
-        <file>gui/APP ICONS/share.png</file>
-        <file>gui/APP ICONS/social-android.png</file>
-        <file>gui/APP ICONS/social-facebook.png</file>
         <file>gui/APP ICONS/social-google.png</file>
-        <file>gui/APP ICONS/social-twitter.png</file>
         <file>gui/APP ICONS/videocamera.png</file>
-        <file>gui/APP ICONS/2color/folder.png</file>
-        <file>gui/APP ICONS/2color/locker.png</file>
-        <file>gui/APP ICONS/2color/message.png</file>
-        <file>gui/APP ICONS/screamer.png</file>
         <file>gui/splash/splash2.png</file>
-        <file>gui/APP ICONS/forbid2.png</file>
-        <file>gui/APP ICONS/forbid.png</file>
-        <file>gui/APP ICONS/pause.png</file>
         <file>gui/APP ICONS/email.png</file>
-        <file>gui/APP ICONS/facebook-icon (1).png</file>
-        <file>gui/APP ICONS/facebook-icon (2).png</file>
-        <file>gui/APP ICONS/facebook-icon.png</file>
-        <file>gui/APP ICONS/Hover-Facebook-icon.png</file>
-        <file>gui/APP ICONS/screamer.jpg</file>
-        <file>gui/APP ICONS/social-facebook-box-white-icon.png</file>
-        <file>gui/APP ICONS/social-twitter-box-white-icon.png</file>
-        <file>gui/APP ICONS/twitter-icon (1).png</file>
-        <file>gui/APP ICONS/twitter-icon (2).png</file>
-        <file>gui/APP ICONS/twitter-icon.png</file>
-        <file>gui/APP ICONS/google-icon (1).png</file>
-        <file>gui/APP ICONS/google-icon.png</file>
-        <file>gui/APP ICONS/social-google-box-white-icon.png</file>
-        <file>gui/APP ICONS/social-facebook-box-white-icon2.png</file>
-        <file>gui/APP ICONS/social-facebook-box-white-icon3.png</file>
-        <file>gui/APP ICONS/social-facebook-box-white-icon4.png</file>
-        <file>gui/APP ICONS/social-twitter-box-white-icon2.png</file>
-        <file>gui/APP ICONS/Facebook-icon (3).png</file>
-        <file>gui/APP ICONS/Facebook-icon (4).png</file>
-        <file>gui/APP ICONS/google-icon (2).png</file>
-        <file>gui/APP ICONS/Google-icon (3).png</file>
-        <file>gui/APP ICONS/Google-Plus-icon.png</file>
-        <file>gui/APP ICONS/twitter-icon (3).png</file>
-        <file>gui/APP ICONS/Twitter-icon (4).png</file>
-        <file>gui/APP ICONS/Web-Twitter-alt-2-Metro-icon.png</file>
-        <file>gui/APP ICONS/Active-Facebook-icon.png</file>
-        <file>gui/APP ICONS/social-facebook2.png</file>
-        <file>gui/APP ICONS/social-twitter_v.png</file>
         <file>gui/APP ICONS/rotate.png</file>
-        <file>gui/APP ICONS/gallery.png</file>
         <file>gui/buttons/mute.png</file>
         <file>gui/buttons/unmute.png</file>
-        <file>gui/icons/settings.png</file>
-        <file>gui/icons/left-arrow.png</file>
-        <file>gui/icons/kisspng-magnifying-glass-cartoon-magnifier-5a734fae643537.3252980615175064784105.png</file>
         <file>gui/icons/mag_glass_black.png</file>
+        <file>gui/icons/avatar.png</file>
+        <file>gui/buttons/play_2_d.gif</file>
+        <file>../../../../Volumes/2TB/BKP/ACRCloudGLfinal/gui/APP ICONS/pause.png</file>
+        <file>../../../../Volumes/2TB/BKP/ACRCloudGLfinal/gui/buttons/play_2.png</file>
+        <file>gui/buttons/play_2_d.png</file>
+        <file>gui/APP ICONS/pause.png</file>
+        <file>gui/APP ICONS/forbid.png</file>
+        <file>gui/no_results.png</file>
+        <file>gui/APP ICONS/clear.png</file>
+        <file>../../../../Volumes/2TB/BKP/ACRCloudGLfinal/gui/APP ICONS/forbid.png</file>
     </qresource>
 </RCC>

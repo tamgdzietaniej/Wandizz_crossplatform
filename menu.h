@@ -12,30 +12,17 @@ public:
     QWidget* parm;
     explicit menu(QWidget *parent = nullptr);
     ~menu() override;
-    void set_opt_geo(QPoint);
+    void set_opt_geo();
     double opac;
+    void getGeo();
     bool showing,hidding;
     bool choosed;
-    void deactivate(QString);
+    void deactivate(QString,QStringList);
     void set_access(bool);
-    bool is_access;
-private slots:
-    void on_m_fav_videos_clicked();
-    void on_m_fav_scenes_clicked();
-    void on_m_fav_items_clicked();
-    void on_m_search_videos_clicked();
-    void on_m_prof_settings_clicked();
-    void on_m_videorec_clicked();
-    void on_options_clicked();
-    void on_m_gohome_clicked();
-    void on_m_exit_clicked();
-    void on_m_search_items_clicked();
-    void on_m_share_clicked();
-    void on_m_videos_clicked();
-    void on_m_search_scenes_clicked();
-    void on_m_prospect_clicked();
-
+    bool is_access,is_context;
+    void setContext(bool);
 public slots:
+    void on_select();
 
 protected:
     void resizeEvent(QResizeEvent*) override;
@@ -46,7 +33,7 @@ private:
     QString style;
 signals:
     void logout();
-    void go(QString);
+    void go(QString,QStringList);
     void exit_app();
     void menu_on(bool);
 };
