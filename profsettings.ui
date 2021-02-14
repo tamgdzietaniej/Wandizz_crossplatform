@@ -1225,6 +1225,9 @@ color:rgb(255,255,255);
 background:rgba(0,0,0,0);
 border-image:none;
 }
+QPushButton:pressed{
+background-color:transparent;
+}
 QLineEdit{
 padding-left:1em;
 background-color:rgba(0,0,0,0);
@@ -1869,7 +1872,7 @@ background:rgba(0,0,0,0);
            <string notr="true"/>
           </property>
           <property name="inputMethodHints">
-           <set>Qt::ImhLatinOnly|Qt::ImhLowercaseOnly|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText|Qt::ImhPreferLatin|Qt::ImhPreferLowercase</set>
+           <set>Qt::ImhEmailCharactersOnly|Qt::ImhLatinOnly|Qt::ImhLowercaseOnly|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText|Qt::ImhPreferLatin|Qt::ImhPreferLowercase</set>
           </property>
           <property name="frame">
            <bool>false</bool>

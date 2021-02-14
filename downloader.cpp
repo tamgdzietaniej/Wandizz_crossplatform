@@ -52,10 +52,10 @@ void downloader::run_watchdog(){
     void downloader::clearList(){
     urllist.clear();
 }
-void downloader::push_url(const QString& url, const QString& fn){
+void downloader::push_url(const QString url, const QString fn){
     push_url(url,fn,-1,0);
 }
-void downloader::push_url(const QString& url,const QString& fn, int index,bool rev){
+void downloader::push_url(const QString url,const QString fn, int index,bool rev){
     qDebug()<<"DN:"<<url;
     if(!QUrl(url).isValid()){
         qDebug()<<"WAND:DN:ERROR:WRONG URL FORMAT:"<<url;

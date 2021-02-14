@@ -8,9 +8,10 @@ socialLogin::socialLogin(QWidget *parent) :
     ui->setupUi(this);
     setAttribute(Qt::WA_DeleteOnClose, true);
     setAttribute(Qt::WA_TranslucentBackground,true);
-    setAttribute(Qt::WA_NoSystemBackground,true);
-    setStyleSheet("background:rgba(0,0,0,0);");
-    act_url="";
+ //   setAttribute(Qt::WA_NoSystemBackground,true);
+
+ //   setAttribute(Qt::WA_OpaquePaintEvent);
+    setStyleSheet("background:rgba(0,0,0,0);color:rgba(255,255,255,255);");
     portal=FACEBOOK;
 }
 void socialLogin::setAppleLogin(){
@@ -20,20 +21,35 @@ void socialLogin::setFacebookLogin(){
     portal=FACEBOOK;
 }
 void socialLogin::createWebView(){
-    w=new browser(ui->container);
-    w->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
-    ui->lay->addWidget(w);
-    w->setAttribute(Qt::WA_DeleteOnClose);
-    QSize siz=size();
-    w->setGeometry(QRect(QPoint(0,0),siz));
-    w->setFixedSize(siz);
-    context=w->engine()->rootContext();
-    context->setContextProperty(QStringLiteral("w"),w->width());
-    context->setContextProperty(QStringLiteral("h"),w->height());
-    w->hide();
-    w->setAttribute(Qt::WA_AlwaysStackOnTop);
+    viewer=new QQuickView();
+    viewer->setResizeMode(QQuickView::SizeRootObjectToView);
+    viewer->setGeometry(QRect(QPoint(0,0),size()));
+    QSurfaceFormat surfaceFormat;
+    surfaceFormat.setAlphaBufferSize(8);
+    viewer->setFormat(surfaceFormat);
+    viewer->setClearBeforeRendering(true);
+    viewer->setColor(QColor(Qt::transparent));
+
+    /* CONTAINER FOR OPENGL WEBVIEW */
+    QWidget *container = QWidget::createWindowContainer(viewer);
+    container->setMinimumSize(size());
+    container->setMaximumSize(size());
+    container->setFocusPolicy(Qt::TabFocus);
+    ui->container->layout()->addWidget(container);
+    ui->container->raise();
+    /* LOOK'n'FEEL */
+    viewer->setDefaultAlphaBuffer(true);
+    viewer->setColor(QColor(0,0,0,0));
+
+    /* SETUP */
+    context=viewer->engine()->rootContext();
+    context=viewer->engine()->rootContext();
+    context->setContextProperty(QStringLiteral("w"),viewer->width());
+    context->setContextProperty(QStringLiteral("h"),viewer->height());
+    ui->container->hide();
 }
 void socialLogin::gotAnswer(QString u){
+    ui->container->hide();
     qDebug()<<"!!!!!!! GOT ANSWER !!!!!!!!!!!!!!!!!!>"<<u<<"<";
     QJsonDocument doc(QJsonDocument::fromJson(u.toLatin1()));
     if(doc.isArray()){
@@ -51,7 +67,7 @@ void socialLogin::gotAnswer(QString u){
                 QString token=ob.value("token").toString();
                 qDebug()<<"DATA:"<<fname<<lname<<gender<<email;
                 emit gotSocialData(fname,lname,gender,email,token);
-                deleteLater();
+                return;
             } else {
                 if(ob.contains("error")){
                     show_error(ob.value("error").toString());
@@ -67,46 +83,43 @@ void socialLogin::gotAnswer(QString u){
                 QString email=ob.value("email").toString();
                 QString verified=ob.value("email_verified").toString();
                 qDebug()<<"DATA:"<<email<<verified;
-                if(verified=="true")
+                if(verified=="true"){
                     emit gotAppleId(email);
-                else show_error("Apple ID says Your email address cannot be authorized. Check AppleID");
-                deleteLater();
+                    return;
+                }
+                else show_error("Apple says: Your email address cannot be authorized. Check AppleID");
             } else {
                 if(ob.contains("error")){
                     show_error(ob.value("error").toString());
+                    emit go("back",{});
                 }
             }
         }
     }
     if(u=="null"){
-        qDebug()<<"U is null";
+        qDebug()<<"U is null"<<u;
         {
-            w->show();
+            ui->container->show();
         }
     }
 }
 void socialLogin::show_error(QString error){
     qDebug()<<"ERROR:"<<error;
-    w->close();
+    QMessageBox::information(this,"","error");
+    viewer->close();
     ui->container->lower();
     update();
     return;
 }
 void socialLogin::setUrl(QString url){
-    qDebug()<<"WEBVIEW:GEO:"<<w->geometry();
-    w->loadPage(url);
-    act_url=url;
-    QObject* obj=w->rootObject();
+    context->setContextProperty(QStringLiteral("ref"),url);
+    viewer->setSource(QUrl("qrc:/main.qml"));;
+    QObject* obj=viewer->rootObject();
     connect(obj,SIGNAL(completed(QString)),this,SLOT(gotAnswer(QString)));
-    ui->container->raise();
-    w->show();
-    w->updateGeometry();
-    w->update();
-    w->hide();
-
+    connect(obj,SIGNAL(undef()),ui->container,SLOT(show()));
 }
 void socialLogin::resizeEvent(QResizeEvent *e){
-    w->setGeometry(0,0,e->size().width(),e->size().height());
+    viewer->setGeometry(0,0,e->size().width(),e->size().height());
 }
 socialLogin::~socialLogin()
 {

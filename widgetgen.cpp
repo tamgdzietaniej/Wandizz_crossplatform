@@ -1,6 +1,11 @@
+/*
+ *
+ * */
 #include "widgetgen.h"
-widgetGen::widgetGen(QObject *parent) : QObject(parent),
 
+#define G_N_ELEMENTS(arr) ((sizeof(arr))/(sizeof(arr[0])))
+widgetGen::widgetGen(QWidget *parent,QString cname) : QOpenGLWidget(parent),selectors_visible(false),
+    ready_to_paint(false),selectors_visible_prev(false),
     back_mutex(false),
     br_deleted(-1),
     over_brick(-1),
@@ -9,19 +14,23 @@ widgetGen::widgetGen(QObject *parent) : QObject(parent),
     filtered(""),
     scan(false),
     animating(false),
+    locker(0),
     filter_chars(0),
     vcatapultscrollspeed(0),
-    menu_opened(false),
+    over_brick_hold(0),
+    over_brick_ind_hold(0),
     scrr(0),
+    empty_queue(false),
+    br_updated(false),
     delmutex(false),
-    locked(true),
+    locked(false),
+    freezed(true),
     is_expanded(false),
     old(1000),
     gen_busy(false),
     debg(0),
     fav_mode(false),
     scr(0),
-    tgs(0),
     naviDis(true),
     pos(QPoint()),
     prev_pos(QPoint()),
@@ -30,31 +39,67 @@ widgetGen::widgetGen(QObject *parent) : QObject(parent),
     fallDown(new gLabel)
 {
     top_menu_switcher=new topMenuSwitcher();
+    setAttribute(Qt::WA_AlwaysStackOnTop,true);
+    setAttribute(Qt::WA_DeleteOnClose,true);
+    setAttribute(Qt::WA_TransparentForMouseEvents,false);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setMouseTracking(true);
+    setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
+    dpi = devicePixelRatio();
+    debg=false;
+    ptimer.setSingleShot(true);
+#if defined (Q_OS_IOS)
+    dpi*=2;
+#endif
+    setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
+
+    gradient.setCoordinateMode(QLinearGradient::ObjectMode);
+    gradient.setStart(0,0);
+    gradient.setFinalStop(QPoint(1,0));// diagonal gradient from top-left to bottom-right
+    //   gradient.setColorAt(0, QColor(59,34,100));
+    gradient.setColorAt(0, QColor(50,25,90));
+    gradient.setColorAt(0.5, QColor(150,2,170));
+    gradient.setColorAt(1, QColor(59,34,100));
+    gradient2.setCoordinateMode(QLinearGradient::ObjectMode);
+    gradient2.setStart(0,0);
+    gradient2.setFinalStop(QPoint(0,1));
+    gradient2.setColorAt(0, QColor(0,0,0,200));
+    gradient2.setColorAt(0.05, QColor(0,0,0,80));
+    gradient2.setColorAt(0.5, QColor(0,0,0,60));
+    gradient2.setColorAt(0.95, QColor(0,0,0,80));
+    gradient2.setColorAt(1, QColor(0,0,0,200));
+    int wdt=QApplication::desktop()->geometry().width();
+    int hgh=QApplication::desktop()->geometry().height();
+    int marg=15*wdt/400;
+    tmp_list.clear();
+    fallDown->type="fall";
+    shadow_geo.setRect(marg,marg,wdt-2*marg,hgh-2*marg);
     splash_img.load(":/gui/BANNERS/wandizz_trnsp.png");
     timer.setInterval( probe_interval );
     connect( &timer, SIGNAL( timeout() ), this, SLOT( timerEv() ));
     connect(this,SIGNAL(timershot(int)),this,SLOT(setNextShot(int)),Qt::QueuedConnection);
-    tmp_list.clear();
-
-    fallDown->type="fall";
-    updtimer.setInterval(2000);
-    updtimer.setSingleShot(true);
     connect(&updtimer,SIGNAL(timeout()),this,SLOT(make_poster()),Qt::QueuedConnection);
+    updtimer.setInterval(2000);
+    updtimer.start(2000);
+}
+void widgetGen::initializeGL(){
+    glClearColor(0,0,0,0);
 }
 void widgetGen::shTitles(bool sh){
     sh_titles=sh;
-    filter();
+    toggleBricks(true);
 }
 void widgetGen::setMRB(bool ctx,int m,int n,int o){
-    glcontainer->setMrb(ctx,m);
     mfcorr=n;
     brcorr=o;
+    marker_body[ctx]->move(0,m);
 }
 void widgetGen::revalidate(QPointer<gLabel> g){
     g->revalidate();
 }
 void widgetGen::start_bg_proc(){
-    timer.start(probe_interval);
+    if( !timer.isActive() )
+        timer.start(probe_interval);
 }
 void widgetGen::stop_bg_proc(){
     if( !timer.isActive() )return;
@@ -65,46 +110,45 @@ void widgetGen::setSelectors(bool f){
     if(s==prev_selector && !f)return;
     prev_selector=s;
     if(f){
-        if(!glcontainer->isVisible())
-            glcontainer->showFullScreen();
         if(!top_menu_switcher->isVisible())
             top_menu_switcher->setVisible(true);
-
     }
-    glcontainer->showSelectors(s);
+    showSelectors(s);
     top_menu_switcher->showSelectors(s);
 }
-
-
 void widgetGen::restoreCoords(){
-    glcontainer->scroll(0,-glcontainer->marker_head->y());
+    int c=-marker_head->mapToGlobal(QPoint(0,0)).y();
+    if(c!=0){
+        qDebug()<<"RESTORE:"<<c<<marker_head->mapToGlobal(QPoint(0,0))<<mapToGlobal(QPoint(0,0));
+        scroll(0,c);
+    }
+}
+void widgetGen::corrGeo(){
+    int c=0;
+
+    for(int i=0;i<=lastvis;i++){
+        if(item(i)){
+            if(item(i)->isLocked()) continue;
+
+            if(item(i)->geometry()!=brick_geo(c)){
+                qDebug()<<"CORR GEO:"<<i;
+                item(i)->setGeometry(brick_geo(c));
+            }
+            c++;
+        }
+    }
 }
 void widgetGen::timerEv(bool force){
-    if(isLocked() && !force)
-        return;
-    int scr=scrollPerform();
-    if(lastscr!=scr){
-        lastscr=scr;
-    }
-    tgs*=2;
-    glcontainer->scroll( tgs, scr );
-    int fh=mrh()/brct.height();
-    int ft=mrh()+glcontainer->height()/brct.height();
-    if(ft>lastvis)ft=lastvis;
-    for(int i=fh;i<=ft;i++){
-        if(item(i)->geometry()!=brick_geo(i)){
-            qDebug()<<"NDEB:Correcting:"<<item(i)->geometry()<<brick_geo(i);
-            item(i)->setGeometry(brick_geo(i));
+    if(scrollPerform()!=0){
+        setSelectors();
+        corrGeo();
+    } else {
+        if((br_deleted==-1 && !delmutex && !force) || locked){
+            if(!pressed ){
+                timer.stop();
+            }
         }
     }
-    qDebug()<<"GL:"<<glcontainer->isVisible();
-    if(!glcontainer->isVisible())glcontainer->repaint();
-    if(br_deleted==-1){
-        if(!pressed && scr==0 && scrr==0 && !isLocked() && glcontainer->isVisible()){
-            timer.stop();
-        }
-    }
-    if(scr!=0)setSelectors();
 }
 void widgetGen::setupTopMenuSwitcher(QRect r){
     top_menu_switcher->setGeometry(r);
@@ -115,10 +159,15 @@ void widgetGen::setupTopMenuSwitcher(QRect r){
 void widgetGen::setFrames(QWidget *f1, QWidget *f2){
     top_menu_switcher->setFrames(f1,f2);
 }
+void widgetGen::clean(){
+    wait_to_lock=true;
+    lock();
 
+}
 bool widgetGen::setContext(const QString& c){
-  //  toggleNavi(true);
-    glcontainer->setTypeID(c!="prospect");
+    //  toggleNavi(true);
+    freeze(true);
+    setTypeID(c!="prospect");
     bool nc=false;
     if(c!=context){
         if(timer.isActive()){
@@ -129,6 +178,7 @@ bool widgetGen::setContext(const QString& c){
     }
     tmp_list.clear();
     context=c;
+    prospectInfo->setEnabled(isProspect());
     pressed=false;
     vcatapultscrollspeed = 0;
     swipe_orient = not_set;
@@ -136,30 +186,33 @@ bool widgetGen::setContext(const QString& c){
     br_deleted = -1;
     return nc;
 }
-int widgetGen::mrh(){
-    return glcontainer->mrh();
-}
-int widgetGen::mrt(){
-    return glcontainer->mrt();
-}
 int widgetGen::msy(){
     //   return top_menu_switcher->mapToGlobal(QPoint(0,top_menu_switcher->height())).y();
     return top_menu_switcher->y();
 }
+void widgetGen::freeze(bool l){
+    freezed=l;
+    //  if(isEnabled()==l)setEnabled(!l);
+    //   if(top_menu_switcher->isEnabled()==l)top_menu_switcher->setEnabled(!l);
+}
 void widgetGen::lock(){
-    if(locked && !isExpanded())return;
-    locked=true;
-    stop_bg_proc();
-    toggleBricks(false);
-
+    emit setLocked(true);
+    lockToggle(true);
 }
 void widgetGen::unlock(){
-    qDebug()<<"unlocking";
-    locked=false;
+    emit setLocked(false);
+    lockToggle(false);
+    freezed=false;
+    need_corr=true;
     start_bg_proc();
 }
+void widgetGen::lockToggle(bool l){
+    locked=l;
+    toggleBricks(!l);
+}
+
 bool widgetGen::isLocked(){
-    return locked;
+    return locked || freezed;
 }
 void widgetGen::set_fav_mode(){
     fav_mode=true;
@@ -169,42 +222,57 @@ void widgetGen::set_prospect_params(Prospect &p){
     top_menu_switcher->par=&p;
     top_menu_switcher->setupSearch();
 }
-void widgetGen::brick_remove( const QString t,int i){
+void widgetGen::brick_remove( int i ,int dbi,const QString tp){
+    if(!item(i))return;
     delmutex=true;
-    br_deleted_ind=i;
-    br_deleted=last_over_brick;
+    //    freeze(true);
+    qDebug()<<"delete:"<<over_brick<<i<<dbi;
+    br_deleted_ind=dbi;
+    br_deleted=i;
+    br_deleted_type=tp;
     stop_bg_proc();
+    int cnt=0;
     animating=false;
     bool animated = false;
     if( context != "videos" || context !="prospect" ){
         int acnt = 0;
         if(debg)qDebug()<<"LOOP DELETE";
-        currItem()->lock();
         group = new QSequentialAnimationGroup( this );
         connect(group,SIGNAL(finished()),this,SLOT(finish_deletion()));
-        for( int j = br_deleted+1;j < getItemsCount();j++ ){
-            if(item(j)->isLocked())
+        for( int j = 0;j < getItemsCount();j++ ){
+            if(item(j)->isLocked()){
+                qDebug()<<"LOCKED:"<<j;
                 continue;
+            }
+            if(cnt<br_deleted){
+                cnt++;
+                continue;
+            }
             animating=true;
             QPropertyAnimation* an= new QPropertyAnimation( item( j ), "geometry", this );
             an->setDuration( antime );
             an->setStartValue( item( j )->geometry() );
-            an->setEndValue( item(j)->geometry().adjusted(0,-item(j)->height(),0,item(j)->height() ));
+            an->setEndValue( brick_geo(cnt));
             an->setDirection( QPropertyAnimation::Direction::Forward );
             an->setEasingCurve( QEasingCurve::Linear );
             //  del_anim.append(an);
             group->addAnimation( an );
             acnt++;
             animated = true;
+            cnt++;
         }
     }
-    if(debg)qDebug()<<"DELETING"<<br_deleted;
+    qDebug()<<"DELETING"<<br_deleted;
+    need_corr=true;
     if( animated  ) group->start(QAbstractAnimation::DeleteWhenStopped);
-    else finish_deletion();
+    else
+        finish_deletion();
+
     // if(filtered!="")filter(filtered);
 }
 int widgetGen::getItemsCount(){
-    if(itemList()==nullptr)return 0;
+    if(itemList()==nullptr)
+        return 0;
     return itemList()->count();
 }
 bool widgetGen::isVideos(QString t){
@@ -227,35 +295,26 @@ bool widgetGen::isProspect(QString t){
     if(t=="")t=context;
     return t=="prospect";
 }
-void widgetGen::filter(){
-    if(context!="prospect") {
-        glcontainer->prospectInfo->setEnabled(false);
-        glcontainer->update();
-    }
-    if(top_menu_switcher->isEditEn){
-        filter(top_menu_switcher->edit->text());
-        return;
-    } else {
-        toggleBricks(true);
-    }
+void widgetGen::setProspectInfo(QFrame *p){
+    prospectInfo=p;
 }
 void widgetGen::filter(const QString& f){
     while(delmutex){
         qDebug()<<"DELMUTEX";
         QApplication::processEvents();
     }
-    qDebug()<<"FILTER::"<<context;
+    // qDebug()<<"FILTER::"<<context;
     filtered=f;
     int scnt=0;
     lastvis=-1;
-    glcontainer->prospectInfo->setEnabled(f=="" && context=="prospect");
-    glcontainer->update();
+    prospectInfo->setEnabled(f=="" && context=="prospect");
+    update();
     QList<int> protect_list({});
     for(int i=0;i<getItemsCount();i++){
-        qDebug()<<"--------------------------------"<<item(i)->txt_text<<filtered<<par->prospect_initial_view<<par->prospect_filter_chars;
-        if((item(i)->tim_text.contains(filtered,Qt::CaseInsensitive) || item(i)->txt_text.contains(filtered,Qt::CaseInsensitive))  &&
+        if(!item(i))continue;
+        if(debg)qDebug()<<"--------------------------------"<<getItemsCount();
+        if((getItemLowerText(i).contains(filtered,Qt::CaseInsensitive) || getItemUpperText(i).contains(filtered,Qt::CaseInsensitive))  &&
             ((filtered.length()>=par->prospect_filter_chars || !isProspect()) || (par->prospect_initial_view && f==""))){
-            qDebug()<<"Prospect filter:"<<item(i)->filename;
             if(isProspect() && !item(i)->isProducer()){
                 /*  Show producer according to title as list-section-head, if locked */
                 if(!protect_list.contains(producerOf(i)->db_index)){
@@ -266,7 +325,7 @@ void widgetGen::filter(const QString& f){
                 }
             }
             /* Show proper widget */
-            qDebug()<<"SHTITLES:"<<(!protect_list.contains(item(i)->db_index))<<sh_titles;
+            //       qDebug()<<"SHTITLES:"<<(!protect_list.contains(item(i)->db_index))<<sh_titles;
             if(!protect_list.contains(item(i)->db_index) && sh_titles){
                 toggle(item(i),true,scnt);
                 scnt++;
@@ -283,33 +342,31 @@ void widgetGen::filter(const QString& f){
     }
     emit filter_done();
     is_expanded=lastvis>-1;
-    //   glcontainer->noResults->setEnabled(lastvis==-1);
-    glcontainer->update();
+    //   noResults->setEnabled(lastvis==-1);
+    update();
 }
 
 QString widgetGen::actContext(){
     return context;
 }
-const QString& widgetGen::currEvent(){
-    if(currItem())
-        return currItem()->event_to_share;
-    else return no_data_string;
-}
 bool widgetGen::mclick(){
     if( lastVis()<0 )return false;
-    QString _oid=QString::number(currItem()->oid);
-    QString _nf=currItem()->netfile;
-    QString _tid = QString::number(currItem()->title_id);
-    qDebug()<<"TID:"<<_tid;
-    QString w_desc=currItem()->txt_text;
+    QString _oid=QString::number(curr_oid);
+    QString _nf=curr_netfile;
+    QString _tid = QString::number(curr_title_id);
+    QString w_desc=getItemUpperText();
     QString _time;
-    QString _context=currType();
-    if( currType()  == "fav_items" ){
-        emit go("web",{currEvent()});
+    QString _context=curr_type;
+    if( curr_type  == "fav_items" ){
+        emit go("web",{curr_event});
         return false;;
     } else
+        if(curr_type=="prospect"){
+        if(curr_item)
+            emit go("userprof",{"context",w_desc,QString::number(curr_item->db_index)});
+    } else
         if( isTakingToCarousel() ){
-        if( currItem()->items_cnt >0 ){
+        if( curr_items_cnt >0 ){
             emit go("carousel",{w_desc, _time,_nf, _oid,_tid});
         } else qDebug()<<"ITEMSCNT!";
         return false;
@@ -317,9 +374,10 @@ bool widgetGen::mclick(){
     return true;
 }
 bool widgetGen::isTakingToCarousel(){
-    return (currItem()->isVideos() || isFScenes() || isFVideos());
+    if(!curr_item)return false;
+    return (curr_item->isVideos() || isFScenes() || isFVideos());
 }
-QPointer<gLabel> widgetGen::mglsearch(const QString lookfor){
+QList<QPointer<gLabel>> widgetGen::getTables(){
     QList<QPointer<gLabel>> tg;
     tg.clear();
     tg.append(vb);
@@ -327,6 +385,10 @@ QPointer<gLabel> widgetGen::mglsearch(const QString lookfor){
     tg.append(fsb);
     tg.append(fib);
     tg.append(msb);
+    return tg;
+}
+QPointer<gLabel> widgetGen::mglsearch(const QString lookfor){
+    QList<QPointer<gLabel>> tg=getTables();
     QPointer<gLabel> res;
     if(tg.count()==0)return nullptr;
     for(int i=0;i<tg.count();i++){
@@ -334,6 +396,7 @@ QPointer<gLabel> widgetGen::mglsearch(const QString lookfor){
         if(_t){
             if(_t->fileurl==lookfor){
                 if(debg)qDebug()<<"Compare&found:"<<_t->fileurl<<lookfor;
+
                 return _t;
             }
         }
@@ -359,10 +422,9 @@ void widgetGen::make_brick( int index, int di,int tid,int itcnt, const QString& 
         tmp_list.append(gl);
     else {
         if(debg)qDebug()<<"NEW BRICK:"<<up<<dn<<mod_name;
-        gl = new gLabel( glcontainer, mod_name ,context );
+        gl = new gLabel( this, mod_name ,context );
         gl->poster_data_ready=&poster_data_ready;
         tmp_list.append(gl);
-        gl->vprect=rct;
         gl->set_prospect_params(*par);
         gl->setDPI(dpi);
         connectSignals(gl);
@@ -375,16 +437,20 @@ void widgetGen::make_brick( int index, int di,int tid,int itcnt, const QString& 
     gl->event_to_share=event;
     gl->set_params( index, di, itcnt,tid,imgfile, imgurl, up, dn,&splash_img, titlemedia,od);
     gl->setSilent(index,mod_name,context);
-    qDebug()<<"MAKE:"<<gl->index<<gl->db_index;
-
+    if(debg)qDebug()<<"MAKE:"<<gl->index<<gl->db_index;
     if(isVideos(mod_name)){
         gl->fav_toggled=fav_videos_list.contains( tid );
     }
-    if(!glcontainer->isVisible()){
-        qDebug()<<"GLCONT NOT VIS";
-        glcontainer->raise();
-        glcontainer->showFullScreen();
-    }
+    gl->setWatcher(curr_type,curr_ctype,curr_event,curr_netfile,curr_oid,curr_title_id,over_brick,curr_items_cnt,br_updated);
+    if(gl->y()+brct.height()>-mrh() && gl->y()<-mrh()+rct.height()>0)
+        gl->setScaled(false);
+    else gl->setScaled(false);
+    //  if(!isVisible()){
+    //     qDebug()<<"GLCONT NOT VIS";
+    //     raise();
+    //     showFullScreen();
+    //  }
+    timerEv();
 }
 QStringList widgetGen::getThumbRef(const QString& imPath,QString title){
     QFileInfo posterFile=QFileInfo( imPath );
@@ -398,22 +464,14 @@ QStringList widgetGen::getThumbRef(const QString& imPath,QString title){
     QString posterDir= d_posters+poster_basename+".png";
     return {posterUrl,posterDir,serverRoot+imPath};
 }
-void widgetGen::setupWrapper(QList<QList<QWidget *>> wl){
-    if(glcontainer)
-        glcontainer->setupWrapper(wl);
-    else {
-        qDebug()<<"Critical:no glcontainer";
-        QApplication::quit();
-    }
-}
 
 void widgetGen::connectSignals(gLabel* gl){
-    connect( gl, SIGNAL( download( const QString&, const QString&,const int,bool) ), this,
-            SIGNAL( download( const QString&, const QString&,const int,bool ) ) );
-    connect( gl, SIGNAL( hover( int, int ) ), this,  SLOT( handleEnter( int, int ) ));
-    connect( gl, SIGNAL( leaved() ), this, SLOT( handleLeave() ) );
+    //  connect( gl, SIGNAL( download( const QString, const QString) ), this,
+    //      SIGNAL( download( const QString, const QString ) ) );
+    connect( gl, SIGNAL( mpressed( gLabel*,QMouseEvent* ) ), this,  SLOT( handlePressed( gLabel*,QMouseEvent* ) ),Qt::DirectConnection);
+    connect( gl, SIGNAL( mreleased( gLabel*,QMouseEvent* ) ), this,  SLOT( handleReleased( gLabel*,QMouseEvent* ) ),Qt::DirectConnection);
     connect( gl, SIGNAL( toggle_fav_video (int, bool)), this, SIGNAL(toggle_fav_video(int,bool)));
-    connect( gl, SIGNAL( del_fav( const QString&,int) ), this, SLOT( brick_remove( const QString&, int )) );
+    connect( gl, SIGNAL( del_fav( int,int,const QString) ), this, SLOT( brick_remove( int, int,const QString )) );
     connect( gl, SIGNAL( hided() ), this,  SIGNAL( hided()) );
     connect( gl, SIGNAL( get_poster(int,const QString&,const QString&,const QString&,const QString&,const QString&,const QString&,int)),
             this, SLOT( poster_generator(int, const QString&, const QString&,const QString&,const QString&,const QString&,const QString&,int)),Qt::QueuedConnection);
@@ -426,75 +484,77 @@ void widgetGen::set_fav_videos_list(const QJsonArray *arr){
         fav_videos_list.append( in );
     }
 }
-void widgetGen::handleLeave(){
-    //  over_brick=-1;
+void widgetGen::handlePressed( gLabel* g ,QMouseEvent* e){
+    if(delmutex || isLocked())return;
+    //   br_updated=true;
+    //   over_brick = e;
+    //   over_brick_ind = f;
+    //  over_brick_hold=e;
+    //  over_brick_ind_hold=f;
+
+    mousePressEvent(e);
 }
-void widgetGen::handleEnter( int e, int f ){
-    qDebug()<<"WGEN HANDLEENTER:"<<e<<f;
-    over_brick = e;
-    over_brick_ind = f;
-    last_over_brick=e;
-    if(top_menu_switcher->isEditEn){
-        if(QApplication::inputMethod()->isVisible()){
-            top_menu_switcher->edit->releaseKeyboard();
-            QApplication::inputMethod()->hide();
-        }
-    }
+void widgetGen::handleReleased( gLabel* g,QMouseEvent*e ){
+    if(delmutex || isLocked())return;
+    //   br_updated=true;
+    //   over_brick = e;
+    //   over_brick_ind = f;
+    //  over_brick_hold=e;
+    //  over_brick_ind_hold=f;
+
 }
+
 void widgetGen::toggleBricks(bool w){
     while(delmutex){
         qDebug()<<"DELMUTEX";
         QApplication::processEvents();
     }
+    if(w && top_menu_switcher->isEditEn){
+        filter(top_menu_switcher->edit->text());
+        return;
+    }
     //  toggleNavi(false);
     is_expanded=w;
     lastvis=-1;
-    qDebug()<<"Toggle bricks.Context:"<<context<<w<<getItemsCount();
+    freeze(true);
     for(int i=0;i<getItemsCount();i++){
         QPointer<gLabel> gl(item(i));
         toggle(gl,w,i);
         if(w)lastvis=i;
     }
+    wait_to_lock=false;
+    freeze(false);
 }
 void widgetGen::toggle(gLabel* g,bool s,int i){
-    //qDebug()<<"TOGGLE:"<<g->index<<g->filename;
-    /* UNLOCK */
-
+    if(i==-1)i=g->index;
+    if(i>-1){
+        //    g->reindex(i,brick_geo(i));
+        // if(debg)qDebug()<<"BRICK GEO:"<<brick_geo(i);
+        marker_tail->move(0,brick_geo(i).bottom());
+        g->setGeometry(brick_geo(i));
+        qDebug()<<"TOGGLE:"<<i<<g->geometry();
+    }
     if(s){
-        if(i>-1){
-            g->setGeometry(brick_geo(i));
-            g->setFixedSize(brick_geo().size());
-        }
-        glcontainer->marker_tail->move(0,g->geometry().bottom());
         g->unlock();
-        g->show();
-        g->raise();
-        qDebug()<<"Unlock brick:"<<g->index<<g->isVisible();
-        QApplication::processEvents();
-        qDebug()<<"Unlock aftebrick:"<<g->index<<g->isVisible();
-        g->update();
-        qDebug()<<"VISIBLE1:"<<i<<glcontainer->isVisible()<<g->isVisible();
-        if(!glcontainer->isVisible())glcontainer->show();
-        qDebug()<<"VISIBLE2:"<<i<<glcontainer->isVisible()<<g->isVisible();
-        if(!glcontainer->isVisible())glcontainer->raise();
-        qDebug()<<"VISIBLE3:"<<i<<glcontainer->isVisible()<<g->isVisible();
-        if(!g->isVisible())g->show();
-        qDebug()<<"VISIBLE4:"<<i<<glcontainer->isVisible()<<g->isVisible();
-        if(!g->isVisible())g->raise();
-        
-        
+        g->activateWindow();
     } else {
         /* LOCK */
+        if(debg)qDebug()<<"LOCK:"<<g->type<<g->index;
         g->lock();
-        g->setVisible(false);
-        //       g->update();
+        while(g->isVisible()){
+            qDebug()<<"WAIT FOR OFF:"<<i;
+            QApplication::processEvents();
+        }
     }
+    update();
+
     //    g->forceUpdate();
-    //    glcontainer->forceUpdate();
+    //    forceUpdate();
     //   timerEv(true);
-    //    qDebug()<<"TOGGLE:"<<s<<glcontainer->childrenRect()<<glcontainer->childrenRegion()<<glcontainer->sizeHint()<<glcontainer->frameGeometry();
+    //    qDebug()<<"TOGGLE:"<<s<<childrenRect()<<childrenRegion()<<sizeHint()<<frameGeometry();
 }
 void widgetGen::activate(){
+    unlock();
     if(isProspect())
         msb=tmp_list;
     if(isVideos())
@@ -505,24 +565,26 @@ void widgetGen::activate(){
         fsb=tmp_list;
     if(isFVideos())
         fvb=tmp_list;
+
     if(debg)qDebug()<<context<<tmp_list;
     if(debg) qDebug()<<"Activate:"<<leased<<" drived straight";
     leased=0;
-    unlock();
-    filter();
-  //  toggleNavi(false);
+    toggleBricks(true);
+    while(!isVisible()){
+        showFullScreen();
+        qDebug()<<"RAISING";
+        update();
+        QApplication::processEvents();
+    }
     setSelectors();
     top_menu_switcher->showKB();
+    timerEv();
 }
 void widgetGen::setDirector(QWidget *w){
-    //  glcontainer->setGeometry(brct);
-
     top_menu_switcher->setParent(w);
+    setParent(w);
     disconnect(top_menu_switcher,SIGNAL(textChanged(const QString&)),this,SLOT(filter(const   QString&)));
     connect(top_menu_switcher,SIGNAL(textChanged(const QString&)),this,SLOT(filter(const   QString&)));
-}
-void widgetGen::toggleBricks(){
-    toggleBricks(true);
 }
 bool widgetGen::isExpanded(){
     return is_expanded;
@@ -531,7 +593,7 @@ void widgetGen::noticeShow(){
     animating=false;
 }
 QRect widgetGen::brick_geo(int i){
-    return QRect(0, brcorr + glcontainer->mrb()+i* brct.height(),brct.width(), brct.height());
+    return QRect(0, brcorr + mrb()+i* brct.height(),brct.width(), brct.height());
 }
 QRect widgetGen::get_srect(int i){
     QRect srect=brick_geo(i);
@@ -552,9 +614,28 @@ QList<QPointer<gLabel> > *widgetGen::itemList(){
     else
         return nullptr;
 }
+
+QString widgetGen::getItemUpperText(int i){
+    if(i==-1)i=over_brick;
+    if(i<0)return "";
+    if(!item(i))return "";
+    else return item(i)->txt_text;
+}
+QString widgetGen::getItemLowerText(int i){
+    if(i==-1)i=over_brick;
+    if(i<0)return "";
+    if(!item(i))return "";
+    else return item(i)->tim_text;
+}
+int widgetGen::getItemOid(int i){
+    if(i==-1)i=over_brick;
+    if(i<0)return -1;
+    if(!item(i))return -1;
+    else return item(i)->oid;
+}
 void widgetGen::share(){
-    QString text = currItem()->txt_text;
-    QUrl url( currEvent());
+    QString text = getItemUpperText();
+    QUrl url( curr_event);
 #if defined( Q_OS_ANDROID )
     share_cross* share = new share_cross( this );
     share->share( text, url );
@@ -583,24 +664,24 @@ void widgetGen::setCoords(QRect rt, int d){
     rct=rt;
     splash_img=splash_img.scaled(brct.size()*.8/dpi);
     // must be called before the widget or its parent window gets shown
-    if(debg)qDebug()<<"RCT:"<<rct<<glcontainer->geometry();
-}
-void widgetGen::setContainer(widget_wrapper* glc){
-    glcontainer=static_cast<widget_wrapper*>(glc);
+    if(debg)qDebug()<<"RCT:"<<rct<<geometry();
 }
 bool widgetGen::manageSelectors(){
-    return glcontainer->mrb() >= mfcorr;
+    return mrb() >= mfcorr;
 }
+
 QPointer<gLabel> widgetGen::producerOf(int i){
     if(i==-1)
         i=over_brick;
-    int oid=item(i)->oid;
+    int oid=getItemOid(i);
     for(int i=0;i<getItemsCount();i++){
-        if(item(i)->db_index==oid){
-            return item(i);
+        if(item(i)){
+            if(item(i)->db_index==oid){
+                return item(i);
+            }
         }
     }
-    return QPointer<gLabel>();
+    return nullptr;
 }
 QPointer<gLabel> widgetGen::item( int i,QString t){
     QString cn=context;
@@ -624,57 +705,41 @@ QPointer<gLabel> widgetGen::item( int i,QString t){
     if(isProspect(cn))
         if(msb.count() > i )
             return msb.at(i);
-    return QPointer<gLabel>();
+    return nullptr;
 }
-QString widgetGen::currType(){
-    qDebug()<<currItem()<<last_over_brick<<over_brick;
-    if(currItem()!=nullptr)
-        return currItem()->type;
-    else return "";
-}
-QPointer<gLabel> widgetGen::currItem(){
-    if(last_over_brick!=-1){
-        //     qDebug()<<"OVER BRICK::"<<over_brick;
-        return item( last_over_brick );
-    }
-    else
-    {
-        qDebug()<<"CURRITEM NULL";
-        return fallDown;
-    }
-}
-
 void widgetGen::finish_deletion(){
     lastvis=-1;
-    emit set_cnt(getItemsCount()-1);
-    QString tp=item(br_deleted)->type;
-    tp.replace("fav_","fav");
-    if(itemList()!=nullptr)
-    itemList()->removeAt(br_deleted);
-    else qDebug()<<"DELETE:CRITICAL!";
-    animating=false;
-    int j,cn=0;
-    for( j = 0;j<getItemsCount();j++ ){
-        if(!item(j)->isLocked()){
-            if(debg)qDebug()<<"---- afer delete positioning brick nr"<<j<<item(j)->index<<" setting to:"<<cn;
-            item( j )->setGeometry(brick_geo( cn ));
-            item( j )->index=cn;
-            lastvis=cn;
-            cn++;
+    emit set_cnt(itemList()->count()-1);
+    qDebug()<<"br:"<<br_deleted;
+    if(item(br_deleted))
+        if(item(br_deleted)){
+            br_deleted_type.replace("fav_","fav");
+            if(!itemList()->isEmpty() && br_deleted<getItemsCount())
+                itemList()->removeAt(br_deleted);
+            else qDebug()<<"DELETE:CRITICAL!";
+            animating=false;
+            emit del_fav(br_deleted_type,br_deleted_ind);
         }
-        else qDebug()<<"---- locked item "<<j<<" omit.";
+    for(int i=br_deleted;i<getItemsCount();i++){
+        if(item(i)){
+            item(i)->index=i;
+            if(!item(i)->isLocked()){
+                lastvis=i;
+            }
+        }
     }
     br_deleted=-1;
-
-    emit del_fav(tp,br_deleted_ind);
-
-    qDebug()<<"DELETE:"<<tp<<over_brick_ind;
+    br_deleted_ind=0;
+    br_deleted_type="";
+    curr_item=nullptr;
     delmutex=false;
+    marker_tail->move(0,brick_geo(lastVis()).bottom());
+    corrGeo();
+    start_bg_proc();
 }
 const QString& widgetGen::getContext(){
     return context;
 }
-
 void widgetGen::poster_generator(int ind,QString tp,  QString url,  QString fn, QString up, QString dn, QString cn,int itcnt){
     for(int i=0;i<poster_data_ready.count();i++){
         if(poster_data_ready.at(i).type==tp && poster_data_ready.at(i).file==fn){
@@ -695,21 +760,24 @@ void widgetGen::poster_generator(int ind,QString tp,  QString url,  QString fn, 
     /* BRICK & POSTER FACTORY */
     //qDebug()<<"POSTERS WAITING:"<<poster_data.count()<<"ready:"<<poster_data_ready.count();
     if(!gen_busy){
-        qDebug()<<"genbusy";
         make_poster();
     }
 
 
 }
 void widgetGen::make_poster(){
-    if(poster_data.count()==0){
-        gen_busy=false;
+    if(poster_data.isEmpty()){
         return;
     }
+    empty_queue=false;
     gen_busy=true;
     future=(QtConcurrent::run([=]() {
         QMutexLocker lock{&_mutex};
         /* GRAB DATA STRUCTURE */
+        if(poster_data.isEmpty()){
+            gen_busy=false;
+            return;
+        }
         PosterData pdata=poster_data.takeFirst();
         QImage _p;
         /* IS FILE AVAILABLE? */
@@ -727,7 +795,7 @@ void widgetGen::make_poster(){
             if(!pdata.in_dl_queue){
                 pdata.in_dl_queue=true;
                 //      qDebug()<<"POSTER:TO DOWNLOAD:"<<pdata.file;
-                emit download(pdata.Url,pdata.file,pdata.index,1);
+                emit download(pdata.Url,pdata.file);
                 _p=splash_img;
                 poster_data.append(pdata);
                 emit timershot(50);
@@ -760,7 +828,7 @@ void widgetGen::make_poster(){
 
         /* look & feel */
         double fct=1;
-                if(pdata.type=="prospect"){
+        if(pdata.type=="prospect"){
             txt_font.setPixelSize(25.0*dpi);
             txt_font.setBold(true);
             txt_rect.setRect(_lw+htm,vtm,lw-_lw-2*htm,lh*.3);
@@ -779,7 +847,16 @@ void widgetGen::make_poster(){
         }
         tim_rect.setRect(txt_rect.left(),txt_rect.bottom(),txt_rect.width()*fct,lh-txt_rect.height());
         tim_font.setPixelSize(16*dpi);
-
+        /* CORRECTION GEO WATCHDOG */
+        for(int i=0;i<=lastvis;i++){
+            if(item(i)){
+                if(item(i)->isLocked()){
+                    qDebug()<<"Locked:"<<i;
+                    continue;
+                }
+                corrGeo();
+            }
+        }
 
         /* factory */
         QPainter painter;
@@ -836,13 +913,17 @@ void widgetGen::make_poster(){
             painter.drawText(csrect,Qt::AlignCenter,par->videos_coming_soon_text);
         }
         painter.end();
-        if(ppi->sizeInBytes()==0 || ppi->isNull())   emit reval (item(pdata.index,pdata.context));
+        if(item(pdata.index,pdata.context)){
+            if(ppi->sizeInBytes()==0 || ppi->isNull())   emit reval (item(pdata.index,pdata.context));
+            poster_data_ready.append({pdata.index,pdata.type,pdata.file,ppi,pdata.context,true});
+        }
         int pdl=poster_data_ready.count();
-        poster_data_ready.append({pdata.index,pdata.type,pdata.file,ppi,pdata.context,true});
         if(pdl<=poster_data_ready.count()){
             //        qDebug()<<"POSTER:"<<pdata.index;
         }
+
         else qDebug()<<"POSTER:!!!!!!!!!!!!!!!!!!!!!!!!ERROR:";
+        gen_busy=false;
         emit timershot(50);
     }));
 }
@@ -850,148 +931,161 @@ void widgetGen::setNextShot(int t){
     QTimer::singleShot(t, this, SLOT(make_poster()));
 }
 void widgetGen::forceUpdate(){
-    glcontainer->forceUpdate();
+    update();
     top_menu_switcher->forceUpdate();
 }
 /* MOUSE MANAGEMENT */
 bool widgetGen::mouseOver(QWidget* w){
     return QRect(w->mapToGlobal(QPoint(0,0)),w->size()).contains(QCursor::pos());
 }
-void widgetGen::mousePress(QMouseEvent* e){
-    if(isLocked())return;
+void widgetGen::mousePressEvent(QMouseEvent* e){
+    qDebug()<<"BR UPDATED"<<br_updated<<over_brick;
     pressed=true;
-    ptimer.start( 300 );
+    no_click=false;
+    if(br_updated){
+        if(over_brick>-1){
+            qDebug()<<"hadle enter:"<<over_brick;
+            curr_item=item(over_brick);
+        }  else curr_item=nullptr;
+    } else {
+        curr_item=nullptr;
+        over_brick=-1;
+    }
+    br_updated=false;
+
+    if(top_menu_switcher->isEditEn){
+        top_menu_switcher->showKB(false);
+        }
+    if(swipe_orient==not_set && abs(vcatapultscrollspeed)<5){
+        ptimer.start( 200 );
+        qDebug()<<"start ptimer"<<vcatapultscrollspeed<<scr;
+    }
+    else{
+        q_vscroll.clear();
+        ptimer.stop();
+        q_vscroll.clear();
+        vcatapultscrollspeed=0;
+        ptimer.stop();
+    }
     if(over_brick>=0){
         diff.setX( 0 );
         diff.setY( 0 );
         pos = e->globalPos();
         prev_pos = pos;
         touch_pos = pos;
-        if(scrr!=0){
-            catapult_brakes=true;
-            no_click=true;
-            scrr=0;
-        }
     }
-    last_over_brick=over_brick;
+    if(abs(scrr)>5){
+        catapult_brakes=true;
+        scrr=0;
+    }
+    if(swipe_orient!=not_set)
+        no_click=true;
+    swipe_orient=not_set;
     start_bg_proc();
 }
-bool widgetGen::mouseRelease(QMouseEvent *e){
-    if(isLocked())return false;
-    if(menu_opened){
-        emit closeMenu();
-        glcontainer->activateWindow();
-        glcontainer->raise();
-        if(!glcontainer->isVisible())glcontainer->showFullScreen();
-        return false;
-    }
+void widgetGen::mouseReleaseEvent(QMouseEvent *e){
+    if(isLocked())return;
     pressed=false;
     bool st=true;
-    if(over_brick>=0){
-        if(vcatapultscrollspeed!=0 || swipe_orient==vertical || scr!=0){
-            vcatapultscrollspeed = get_vscroll();
-            no_click=true;
-            st=false;
-        } else if(ptimer.isActive() && !no_click && swipe_orient==not_set){
-            ptimer.stop();
-            if( e->globalPos().x() <=currItem()->width()*4/5 ){
-                st=mclick();
-            } else{
-                if( context=="videos" ){
-                    currItem()->toggle_fav(true);
-                    st=false;
-                } else {
+    vcatapultscrollspeed = get_vscroll();
+
+    catapult_brakes=false;
+    if(!no_click && swipe_orient==not_set){
+        qDebug()<<"ptimer:"<<ptimer.isActive()<<(swipe_orient==not_set);
+        if(ptimer.isActive()){
+            st=get_hover();
+            if( over_brick>-1){
+                if(e->globalPos().x() <=brct.width()*4/5 ){
+                    mclick();
+                } else
+                    if( context=="videos" ){
+                    if(curr_item)
+                        curr_item->toggle_fav(true);
+                } else
                     if(context.contains("fav")){
-                        share();
-                        st=false;
-                    }
+                    share();
                 }
             }
         }
-    } else {
-        if(ptimer.isActive()){
-            if(mouseOver(top_menu_switcher)){
-                st=top_menu_switcher->get_hover(e->globalPos());
-            } else if(top_menu_switcher->isEditEn){
-                top_menu_switcher->edit->releaseKeyboard();
-            }
-            if(st)
-                st=glcontainer->get_hover(e->globalPos());
-        }
+    } else if(swipe_orient==horizontal){
+        if(over_brick>-1 && curr_item)
+            curr_item->relEvent(e);
     }
     swipe_orient=not_set;
-    no_click=false;
-    over_brick=-1;
-    return st;
 }
-void widgetGen::mouseMove(QMouseEvent *e){
-    if(isLocked()){
-        qDebug()<<"LOCKED";
+void widgetGen::mouseMoveEvent(QMouseEvent *e){
+    qDebug()<<"WGEN MOUSEMOE:"<<over_brick<<isLocked()<<delmutex<<swipe_orient<<lastvis;
+    if(isLocked() || over_brick==-1 || delmutex){
+        qDebug()<<"LOCKED("<<over_brick<<")";
         return;
     }
-    if(over_brick==-1){
-        return;
-    }
+    prev_pos = pos;
     pos = e->globalPos();
     move = QVector2D( pos-prev_pos );
     diff = QVector2D( pos-touch_pos );
-    prev_pos = pos;
+
     get_swipe_predicter();
+    if(swipe_orient==horizontal && over_brick>-1){
+        if(curr_item)
+            curr_item->movEvent(e);
+        return;
+    }
     if( swipe_orient == vertical){
         if( lastVis()>-1 ){
             scrr += double( move.y() );
             append_vscroll( double( move.y() ) );
         }
-        return;
     }
-}
-bool widgetGen::isMousePressed(){
-    return pressed;
 }
 /* SWIPE PREDICTER */
 void widgetGen::get_swipe_predicter(){
     if( lastVis()<0 )return;
     if( swipe_orient != not_set )return;
-    no_click = false;
     if( abs( move.x() ) <= abs( move.y() ) && abs( diff.y() )>2*dpi ){
-        no_click = true;
         if( item( lastVis() )->geometry().bottom()-mrh()>rct.height() ){
             swipe_orient = vertical;
-            if(over_brick>-1)currItem()->is_gesture=false;
+            if(curr_item)
+                curr_item->setGesture(false);
             return;
         }
     } else
         if( abs( move.x() )>abs( move.y() ) && !offline && abs( diff.x() )>3*dpi ){
         swipe_orient = horizontal;
-        if(over_brick>-1)currItem()->is_gesture=true;
-        if(currType()  == "videos" )return;
-        no_click = true;
+        if(curr_type  == "videos" )return;
+        if(curr_item)curr_item->setGesture(true);
     }
 }
 /* SCROLLER MANAGEMENT */
 int widgetGen::scrollPerform(){
-    if(isLocked())return 0;
     if( !pressed ){
         rubberbandscrollspeed = 0;
-        int tail=glcontainer->marker_tail->y();
-        int head=glcontainer->marker_head->y();
-        if(head!=0)
-            // too high
-            if( head>0 ){
-                rubberbandscrollspeed = -head / 2;
-                vcatapultscrollspeed /= 2;
-                if( abs( rubberbandscrollspeed )<1 ){
-                    rubberbandscrollspeed = -head;
-                }
-            }
+        int tail=marker_tail->y();
+        int head=marker_head->geometry().bottom();
         // too low
-        if( tail<rct.height() && head<0 ){
+        if(tail<rct.height() && head>0){
+            rubberbandscrollspeed = -(head/2)*!reinit-head*reinit;
+            if(reinit)
+                qDebug()<<"REINIT";
+            if( abs( rubberbandscrollspeed )<1 ){
+                rubberbandscrollspeed = -head;
+            }
+        } else
+            if( tail<rct.height() && head<0){
+            qDebug()<<"LOW:"<<head<<tail;
             vcatapultscrollspeed /= 2;
             rubberbandscrollspeed = ( rct.height()-tail )/2;
             if( abs( rubberbandscrollspeed )<1 ){
                 rubberbandscrollspeed = rct.height()-tail;
             }
+        } else
+            if( head>0 && tail>rct.height()){
+            rubberbandscrollspeed = -head / 2;
+            vcatapultscrollspeed /= 2;
+            if( abs( rubberbandscrollspeed )<1 ){
+                rubberbandscrollspeed = -head;
+            }
         }
+        //else qDebug()<<"HEAD:"<<head<<glcontainer->marker_head->y()<<glcontainer->marker_head->mapToGlobal(QPoint(0,0));
         scrr += rubberbandscrollspeed;
         rubberbandscrollspeed = 0.0;
         if( fabs( vcatapultscrollspeed ) < 1 ){
@@ -1003,11 +1097,15 @@ int widgetGen::scrollPerform(){
     }
     scr=scrr;
     scrr=0;
+    scroll( 0, scr );
+    if(reinit){
+        reinit=false;
+    }
     return scr;
 }
 gLabel* widgetGen::lastVisibleItem(){
     if(lastVis()==-1 || getItemsCount()==0 || lastVis()>=getItemsCount()){
-        return fallDown;
+        return nullptr;
     } else {
         if(!item(lastVis())->isLocked())
             return item(lastVis());
@@ -1037,13 +1135,203 @@ void widgetGen::append_vscroll( int s ){
 }
 /* PERMISSIONS CHECK & INFO */
 bool widgetGen::canToggleFavs(){
-    qDebug()<<"CA:"<<(currItem()->isVideos() || (par->prospect_favs && currItem()->isProducerType() && currItem()->isVideosType()));
-    return currItem()->isVideos() || (par->prospect_favs && currItem()->isProducerType() && currItem()->isVideosType());
+    if(!curr_item)return false;
+    return isVideos() || (par->prospect_favs && curr_item->isProducerType() && curr_item->isVideos());
 }
 bool widgetGen::canToggleShares(){
-    return (!currItem()->isProducerType() && !currItem()->isVideosType()) ||
-           (par->prospect_shares && currItem()->isProducerType() && currItem()->isProducer() &&
-            currType()!="videos");
+    if(!curr_item)return false;
+    return (!curr_item->isProducerType() && !curr_item->isVideosType()) ||
+           (par->prospect_shares && curr_item->isProducerType() && curr_item->isProducer() &&
+            !isVideos());
+}
+void widgetGen::setMarkers(){
+    marker_head=new QOpenGLWidget(this);
+    marker_body[0]=new QOpenGLWidget(this);
+    marker_body[1]=new QOpenGLWidget(this);
+    marker_tail=new QOpenGLWidget(this);
+    marker_head->setFixedSize(0,0);
+    marker_body[0]->setFixedSize(0,0);
+    marker_body[1]->setFixedSize(0,0);
+    marker_tail->setFixedSize(0,0);
+    marker_head->move(0,0);
+    marker_body[0]->move(0,0);
+    marker_body[1]->move(0,0);
+    marker_tail->move(0,height());
+}
+bool widgetGen::get_hover(){
+    mpos=QCursor::pos();
+    nmpos=mapToGlobal(mpos);
+    if(!ready_to_paint){
+        qDebug()<<objectName()<<"not ready";
+        return false;
+    }
+    for(int j=0;j<wlist.count();j++){
+        for(int i=0;i<wlist.at(j).count();i++){
+            QList<QPushButton*> bl = wlist.at(j).at(i)->findChildren<QPushButton *>();
+            for(int k=0;k<bl.count();k++){
+                if(clicked(bl.at(k))){
+                    return false;
+                }
+            }
+        }
+        for(int i=0;i<wlist.at(j).count();i++){
+            QList<QCheckBox*> bl = wlist.at(j).at(i)->findChildren<QCheckBox*>();
+            if(bl.count()>0){
+                for(int k=0;k<bl.count();k++){
+                    if(clicked(bl.at(k))){
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    //  if(prospectInfo->isEnabled()){
+    //      QList<QPushButton*> bl=prospectInfo->findChildren<QPushButton*>();
+    //      if(bl.count()>0){
+    //         bl[0]->click();
+    //     }
+    //   else qDebug()<<"no button";
+    //  }
+}
+bool widgetGen::clicked(QWidget* w){
+    if(!w)return false;
+    QRect rc=QRect(w->mapToGlobal(QPoint(0,0)),w->size());
+    if(rc.contains(mpos)){
+        if(QString::fromLatin1(w->metaObject()->className())=="QPushButton"){
+            if(w->isEnabled()){
+
+                int cx=w->mapToGlobal(QPoint(0,0)).x();
+                int cy=w->mapToGlobal(QPoint(0,0)).y();
+                qDebug()<<"-----------------------------------------------------------";
+                qDebug()<<"ITEM NAME:"<<w->objectName();
+                qDebug()<<"--- HOVER : WW ---- MOUSE:"<<nmpos<<" / global:"<<mpos;
+                qDebug()<<"- item pos:"<<mpos<<", map to glob:"<<w->mapToGlobal(QPoint(0,0))<<w->size()<<"-";
+                qDebug()<<"- item geo:"<<w->rect().adjusted(cx,cy,cx,cy);
+                qDebug()<<"-----------------------------------------------------------";
+                static_cast<QPushButton*>(w)->click();
+            }
+        }
+        if(QString::fromLatin1(w->metaObject()->className())=="QLineEdit"){
+            if(w->isEnabled()){
+                static_cast<QLineEdit*>(w)->setFocus();
+            }
+        }
+        if(QString::fromLatin1(w->metaObject()->className())=="QCheckBox"){
+            if(w->isEnabled()){
+                static_cast<QCheckBox*>(w)->click();
+            }
+        }
+        return true;
+    }
+    return false;
+}
+void widgetGen::setTypeID(bool ctx){
+    type_id=ctx;
+}
+
+void widgetGen::showSelectors(bool s){
+    if(selectors_visible!=s){
+        selectors_visible=s;
+        update();
+    }
+}
+int widgetGen::mrh(){
+    return marker_head->y();
+}
+int widgetGen::mrt(){
+    return marker_tail->y();
+}
+int widgetGen::mrb(){
+    return marker_body[type_id]->y();
+}
+void widgetGen::setupInfo(QFrame *pi){
+    prospectInfo=static_cast<QFrame*>(pi);
+
+}
+void widgetGen::setupWrapper(QList<QList<QWidget*>> wdl){
+    /* mapper */
+    /* groups:
+     * 0 - static, rendered when vP::UNDER
+     * 1 - dynamic, rendered always
+     * 2- dynamic, rendered when vP::UNDER
+     * 3- static, rendered when vP::OVER
+     */
+    wlist.clear();
+    wlist.append(wdl);
+    for(int j=0;j<wdl.count();j++){
+        for(int i=0;i<wlist.at(j).count();i++){
+            QPoint tpos(mapFromGlobal(wlist.at(j).at(i)->mapToGlobal(QPoint(0,0))));
+            tpos.setY(tpos.y()-mrh());
+            if(j==1 || j==2){
+                wlist.at(j).at(i)->setParent(this);
+                wlist.at(j).at(i)->setVisible(false);
+            }
+            wlist.at(j).at(i)->move(mapFromGlobal(tpos));
+        }
+    }
+    int marg=15*width()/400;
+    shadow_geo.setRect(marg,marg,width()-2*marg,height()-2*marg);
+    ready_to_paint=true;
+    timerEv();
+}
+void widgetGen::resizeEvent(QResizeEvent *e){
+    resizeGL(e->size().width()*dpi,e->size().height()*dpi);
+}
+void widgetGen::paintGL(){
+    QPainter painter(this);
+#if defined (Q_OS_ANDROID)
+    qDebug()<<"PAINT";
+#endif
+    /* flush gpu */
+    painter.beginNativePainting();
+    glClear(GL_COLOR_BUFFER_BIT);
+    painter.endNativePainting();
+
+    /* background */
+    QPainter p(this);
+    QPen pen;
+    pen.setWidth(1);
+    pen.setColor(QColor(0,0,0,0));
+    p.setRenderHints(QPainter::HighQualityAntialiasing);
+    p.setPen(pen);
+    p.setBrush(gradient);
+    p.fillRect(rect(),p.brush());
+    p.setPen(QColor(0,0,0,100));
+    p.setBrush(QColor(0,0,0,70));
+    p.drawRoundedRect(shadow_geo,5,5);
+    if(ready_to_paint){
+        /* paint event */
+        /* main render loop */
+        for(int j=0;j<wlist.count();j++){
+
+            /* switch between alternative widgets */
+            /* vP::UNDER - initial position */
+            if( ( selectors_visible == vP::OVER && ( j==0 || j == 2 ) ) || (selectors_visible == vP::UNDER && j == 3 ) ){
+                continue;
+            }
+
+            /* inner loop - cluster */
+            for(int i=0;i<wlist.at(j).count();i++){
+                QWidget* w=wlist.at(j).at(i);
+                if(w)
+                    if(w->isEnabled()){
+                        if(rect().intersects(QRect(w->pos(),w->size()))){
+                            w->render(&painter,w->mapToGlobal(QPoint(0,0)));
+                        }
+                    }
+            }
+        }
+        //   if(prospectInfo->isEnabled()){
+        //      prospectInfo->render(&painter,prospectInfo->pos());
+        //  }
+        //    if(noResults->isEnabled()){
+        //        noResults->render(&painter,noResults->pos());
+        //    }
+        if(nightmode)
+            painter.fillRect(rect(),QColor(0,0,0,50));
+        painter.end();
+    } else
+        qDebug()<<"Container not ready";
 }
 
 /* DESTRUCTOR */

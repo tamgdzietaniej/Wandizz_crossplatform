@@ -53,8 +53,8 @@ signals:
     void got_reply();
     void  need_revalidate_widget(int);
 public slots:
-    void push_url(const QString&,const QString&);
-    void push_url(const QString&, const QString&, int,bool);
+    void push_url(const QString,const QString);
+    void push_url(const QString, const QString, int,bool);
   //  void run_watchdog();
 private slots:
     void begin_download();

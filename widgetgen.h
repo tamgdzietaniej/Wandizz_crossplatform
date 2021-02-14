@@ -7,55 +7,96 @@
 #include <QtConcurrent/QtConcurrent>
 #include "globals.h"
 #include "gllabel.h"
-#include "widget_wrapper.h"
 #include "topmenuswitcher.h"
+#include "appinspector.h"
+#include <QCheckBox>
+#include<QDesktopWidget>
 #if defined(Q_OS_ANDROID)
 #include <share_cross.h>
 #elif defined (Q_OS_IOS)
 #include <shareios.h>
 #endif
-class widgetGen : public QObject
+class widgetGen :  public QOpenGLWidget
 {
     Q_OBJECT
-public:
 
-    widgetGen(QObject *parent = nullptr);
+public:
+    widgetGen(QWidget *parent = nullptr,QString="");
     ~widgetGen();
     void make_brick(int,int,int,int items_cnt,const QString&,const QString&,const QString&,const QString&,const QString&,
                     const QString&,int ind_oid=-1,QString event=no_data_string);
+    void update_container(int c);
+    QOpenGLWidget* marker_head,*marker_body[2],*marker_tail;
+    void shft();
+    double compr,prev_compr;
+    Prospect* prospect_init_params;
+    void corrGeo();
+    bool get_hover();
+    bool get_hover(QPoint());
+    int scr;
+    bool debg,ctx;
+    QPoint mpos,nmpos;
+    int dpi;
+    int oldsel;
+    void setMarkers();
+    int corr_mrb;
+    QRect shadow_geo;
+    bool showme;
+    int oldh,oldt;
+    bool ready_to_paint;
+    bool selectors_visible,selectors_visible_prev,issrch,nightmode;
+    QFrame * tw;
+    void forceUpdate();
+    //  QTimer *timer;
+    int moved,prev_moved;
+    QLabel* labs;
+    QWidget *midFrame=nullptr;
+    void updateFrameSet();
+    void showSelectors(bool);
+    void setupWrapper(QList<QList<QWidget*>>);
+    void setupInfo(QFrame*);
+    QFrame* noResults,*prospectInfo;
+    QInputMethod* input=QApplication::inputMethod();
+    bool clicked(QWidget*);
+    void setMrb(bool,int);
+    int mrh();
+    int mrb();
+    int mrt();
+    void setTypeID(bool);
     bool back_mutex;
     // lists
     void share();
-    void forceUpdate();
     void activate();
+    void clean();
     bool ftm;
     QImage im;
+    enum swipeOrientations{
+        not_set,
+        horizontal,
+        vertical
+    } swipe_orient;
     void toggleNavi(bool);
     int oldpy,newpy;
     int inpt_h,brcorr;
-    void setContainer(widget_wrapper*);
+    QList<QPointer<gLabel>> getTables();
     QPointer<topMenuSwitcher> top_menu_switcher;
     void setupTopMenuSwitcher(QRect);
-    QInputMethod* input=QApplication::inputMethod();
     void setFrames(QWidget*,QWidget*);
-    const QString &currEvent();
+    QString curr_event;
     void setCoords(QRect, int);
-    double compr;
     QStringList getThumbRef(const QString&, QString);
     void setDirector(QWidget*);
     bool setContext(const QString&);
     void setSelectors(bool force=false);
     QPointer<gLabel>mglsearch(const QString lookfor);
-    void setSearch(bool,QFrame* w=nullptr);
     QRect get_srect(int),txt_rect,tim_rect;
     QList<QPointer<gLabel>> tmp_list;
-    int lb;
+    int lb,curr_oid,curr_title_id,curr_items_cnt;
     int br_deleted,iw,br_deleted_ind;
     const QString& getContext();
-    void setupWrapper(QList<QList<QWidget*>>);
     void set_prospect_params(Prospect&);
     QList<QPointer<gLabel>>* itemList();
-    QString actContext();
+    QString actContext(),curr_netfile;
     bool sh_titles;
     void shTitles(bool);
     bool isProspect(QString t="");
@@ -63,22 +104,20 @@ public:
     bool isFVideos(QString t="");
     bool isFScenes(QString t="");
     bool isFItems(QString t="");
-    QPointer<gLabel> currItem(),producerOf(int i=-1);
-    QString currType();
+    QPointer<gLabel> curr_item,producerOf(int i=-1);
+    QString curr_type,curr_ctype;
     void set_fav_mode();
     QPointer<gLabel> item(int,QString t="");
     bool manageSelectors();
-    int over_brick,over_brick_ind,antime,last_over_brick;
+    int over_brick,over_brick_ind,antime,over_brick_hold,over_brick_ind_hold;
     QString filtered,prev_context;
     QRect rct,brct;
     int animating;
-    qreal dpi,lmm,_prop;
+    qreal lmm,_prop;
     Prospect* par;
     int leased;
     void settleAt(int);
     void toggleBricks(bool);
-    void toggleBricks();
-    int tgs;
     bool delmutex;
     int offs;
     PostersReady pr;
@@ -103,39 +142,41 @@ public:
     bool isMousePressed();
     int scrollPerform();
     bool mouseOver(QWidget*);
-    void mouseMove(QMouseEvent*);
-    void mousePress(QMouseEvent*);
-    bool mouseRelease(QMouseEvent*);
-    bool menu_opened;
     bool mclick();
     QList<int> fav_videos_list;
     void set_fav_videos_list(const QJsonArray*);
-    QPointer<widget_wrapper> glcontainer;
     void start_bg_proc();
     void stop_bg_proc();
     bool isLocked();
     void unlock();
     void lock();
-    int mrh();
+    void freeze(bool);
     int msy();
-    int mrt();
     void setMRB(bool,int,int,int);
     bool scan;
-    bool isNDis();
+    bool isNDis(),reinit;
     int  corr_y;
     gLabel* fooLab;
-    int wdth,scrr,scr;
+    bool br_updated;
+    int wdth,scrr,scroffs;
     void restoreCoords();
+    void setProspectInfo(QFrame*);
+    void lockToggle(bool);
 private:
+    QLinearGradient gradient,gradient2;
+    QRect tgeo;
+    QList<QList<QWidget*>> wlist;
+    QList<QList<QPoint>> wpos;
+    bool type_id;
     int lastvis;
     bool naviDis;
     QMutex _mutex;
     void connectSignals(gLabel*);
     bool canToggleFavs();
     bool canToggleShares();
-    int lastscr,mfcorr;
+    int mfcorr;
     bool isTakingToCarousel();
-    bool locked,lasttoggl;
+    bool locked,lasttoggl,freezed;
     QFont txt_font,tim_font;
     int fl,lh,lw,_lw,_lw2,lm,vtm,htm;
     bool is_expanded,gen_busy;
@@ -144,25 +185,27 @@ private:
     bool fav_mode;
     QTimer ptimer,updtimer;
     QWidget* director;
-    bool debg;
     QList<QPointer<gLabel>> vb,fib,fsb,fvb,msb,foo;
     Qt::Alignment tim_align;
     QImage *ppi=nullptr, splash_img;
     QPoint pos, prev_pos, touch_pos;
-    QVector2D diff,move;
+    QVector2D move,diff;
     int tail_offs;
     void append_vscroll(int);
     void get_swipe_predicter();
     QList<int> q_vscroll;
-    bool no_click;
     int get_vscroll(bool e=true);
+    bool no_click;
     int old;
-    enum swipeOrientations{
-        not_set,
-        horizontal,
-        vertical
-    } swipe_orient;
+    QString br_deleted_type;
+    int locker;
+    bool wait_to_lock;
+    bool need_corr;
+    bool empty_queue;
     QTimer timer;
+    QString getItemUpperText(int i=-1);
+    QString getItemLowerText(int i=-1);
+    int getItemOid(int i=-1);
 signals:
     void shown();
     void reval(QPointer<gLabel>);
@@ -174,38 +217,39 @@ signals:
     void click(int,int);
     void toggle_fav_video(int,bool);
     void del_fav(const QString&,int);
-    void download(const QString&, const QString&, const int, bool);
+    void download(const QString, const QString);
     void hided();
     void back(QString,QStringList={});
     void get_poster(int,bool,const QString&,const QString&,const QString&,const QString&);
-    void settled();
-    void startProcessing();
-    void fav_update(int);
-    void send_item(int);
     void go(const QString&,const QStringList&);
-    void preparing_shutdown(int);
     void filter_done();
-    void stopTimer();
     void set_cnt(int);
-    void startTimer();
-    void do_poster();
     void closeMenu();
     void timershot(int);
+    void setLocked(bool);
+    void fav_update(int);
 private slots:
     void setNextShot(int);
     void  revalidate(QPointer<gLabel>);
     void poster_generator(int, QString, QString, QString, QString, QString, QString,int);
     void make_poster();
     void noticeShow();
-    void handleEnter(int,int);
-    void handleLeave();
+    void handlePressed(gLabel*,QMouseEvent*);
+    void handleReleased(gLabel*,QMouseEvent*);
     void timerEv(bool force=false);
 
 public slots:
     void finish_deletion();
-    void brick_remove(const QString, int);
+    void brick_remove(int, int,const QString);
     void filter(const QString&);
-    void filter();
+
+protected:
+    void paintGL() override;
+    void initializeGL() override;
+    void resizeEvent(QResizeEvent *e) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
 };
 
 #endif // WIDGETGEN_H

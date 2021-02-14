@@ -10,8 +10,7 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     scrolling=false;
     setAttribute(Qt::WA_NoSystemBackground);
     setAttribute(Qt::WA_AlwaysStackOnTop,true);
-    setAttribute(Qt::WA_OpaquePaintEvent);
-    setAttribute(Qt::WA_DeleteOnClose,true);
+    // setAttribute(Qt::WA_OpaquePaintEvent);
     setAttribute(Qt::WA_DeleteOnClose,true);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
     setSizePolicy(QSizePolicy::Fixed,QSizePolicy::Fixed);
@@ -19,6 +18,7 @@ MainWidget::MainWidget(int tp,QWidget *parent):
     prev_buffer2=-1;
     lock=false;
     dpi=devicePixelRatio();
+    //  dpi=1;
     if(debg)qDebug()<<"DPI"<<dpi;
     player_inited=false;
     lw=-1;
@@ -91,7 +91,6 @@ void MainWidget::resizeEvent(QResizeEvent *e){
     if(!type)msize=QSize(e->size().height()*1.76,e->size().height());
     else msize=QSize(e->size().height()+2,e->size().height());
     update();
-    img.setDevicePixelRatio(dpi);
     e->accept();
 }
 void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,QList<int> favss){
@@ -103,7 +102,6 @@ void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,Q
     prev_time=-1;
     par_idx=0;
     msize=siz;
-    img.setDevicePixelRatio(dpi);
     bw=msize.width()*.3;
     bh=msize.height()*.3;
     by=msize.height()*.7;
@@ -132,10 +130,9 @@ void MainWidget::prepare(struct event_data ed[],int len,QSize siz,QString netf,Q
                 filename[par_idx]=ed[i].item_file;
             else
                 filename[par_idx]=ed[i].frame_file;
-            bool fx=QFileInfo::exists(filename[par_idx]);
             slide[par_idx].image=&img;
             slide[par_idx].image->setDevicePixelRatio(dpi);
-            slide[par_idx].shown=false;;
+            slide[par_idx].shown=false;
             slide[par_idx].waiting_swap=false;
             cluster[i]=par_idx;
             last_assigned[par_idx]=i;
@@ -207,17 +204,17 @@ void MainWidget::close_video(){
 #endif
 }
 void MainWidget::initializeGL(){
-    glClearColor(1,1,1,type);
+    glClearColor(1,1,1,0);
 }
 void MainWidget::paintGL(){
     if(items==0)return;
     QPainter painter(this);
     painter.beginNativePainting();
     glClear(GL_COLOR_BUFFER_BIT);
-    glClearColor(0,0,0,0);
     painter.endNativePainting();
-    painter.fillRect(rect(),QColor(0,0,0,0));
-    double sc=mw_geo.center().x()-geometry().x();
+    painter.setBackgroundMode(Qt::TransparentMode);
+
+    double sc=double(mw_geo.center().x()-geometry().x())/double(width()/2);
     int offs=marker_left->geometry().right();
     QRect geo=QRect(mw*msize.width()+offs+left_offset,0,wsize.width(),wsize.height());
     for(int i=0;i<=last_created;i++){
@@ -235,16 +232,21 @@ void MainWidget::paintGL(){
                 //  qDebug()<<"PAINT SWAP:"<<slide[i].image<<slide[i].swap_img<<type;
                 slide[i].image=static_cast<QImage*>(slide[i].swap_img);
                 slide[i].image->setDevicePixelRatio(dpi);
-                qDebug()<<"SWAP:"<<i<<mw;
                 slide[i].waiting_swap=false;
             }
-            ox=(msize.width()-slide[i].image->width()/dpi)/2;
+            //      ox=(msize.width()-slide[i].image->width()/dpi)/2;
+            ox=0;
             y=(msize.height()-slide[i].image->height()/dpi)/2;
-            w=slide[i].image->width()/dpi;
-            h=slide[i].image->height()/dpi;
-            x=i*msize.width()+offs+ox;
+            y=0;
+            //    w=slide[i].image->width()/dpi;
+            w=msize.width();
+            h=msize.height();
+            //     h=slide[i].image->height()/dpi;
+            x=i*msize.width()+offs;//+ox;
+
             geo=QRect(x,y,w,h);
             QRect srect=slide[i].image->rect();
+
             if(geo.right()>0 && geo.left()<width()){
                 if(geo.left()<0){
                     srect.adjust(geo.left(),0,0,0);
@@ -257,7 +259,7 @@ void MainWidget::paintGL(){
                 int l=i*msize.width()+offs;
                 int r=(i+1)*msize.width()+offs;
                 painter.drawImage(geo.topLeft(),*slide[i].image,srect);
-                painter.setBrush(QColor(0,0,0,255));
+                painter.setBrush(QColor(0,0,0,0));
                 painter.setPen(QColor(0,0,0,255));
                 if(l>0 && l<width())painter.drawLine(l,0,l,height());
                 if(r>0 && r<width())painter.drawLine(r,0,r,height());
@@ -335,7 +337,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent *e){
             }
             scrolled=false;
             if(abs(get_trip_to(mw))<2 && hscroll_iner==0.0 && type && !scroll_locked){
-                emit go_web(ev_data[mw].event);
+                emit go("web",{ev_data[mw].event});
             } else {
                 scrolling=true;
             }
@@ -355,7 +357,6 @@ void MainWidget::mouseReleaseEvent(QMouseEvent *e){
 }
 void MainWidget::mousePressEvent(QMouseEvent *e){
     if(items==0 || mw<0)return;
-    qDebug()<<"Muse press";
     prev_pos=e->pos();
     press_pos=prev_pos;
     pos=prev_pos;
@@ -377,7 +378,6 @@ void MainWidget::mousePressEvent(QMouseEvent *e){
 }
 void MainWidget::timerev(bool st){
     if(items==0 || lock==true){
-        qDebug()<<"Items:0";
         return;
     }
     get_coords();
@@ -492,6 +492,10 @@ void MainWidget::get_coords(){
     lw=bleft/ww;
     mw=bmid/ww;
     rw=bright/ww;
+    prl=lw-double(bmid)/double(ww);
+    prm=mw-double(bmid)/double(ww);
+    prp=rw-double(bmid)/double(ww);
+
     if(rw>last_created)rw=last_created;
     if(mw>last_created)mw=last_created;
     if(lw>last_created)lw=last_created;
@@ -502,22 +506,45 @@ void MainWidget::get_coords(){
 }
 void MainWidget::getPics(){
     future=QtConcurrent::run([=]() {
+        QPainter p;
         for(int genw=0;genw<items;genw++){
             if(!slide[genw].shown){
                 if(QFileInfo::exists(filename[genw] + ".lock"))qDebug()<<"LOCK!!!";
                 if(QFileInfo::exists(filename[genw]) && !QFileInfo::exists(filename[genw] + ".lock")){
-                    if(type)qDebug()<<"loading:all_loaded:"<<all_loaded<<total_loaded<<items<<last_created;
+                    //   if(type)qDebug()<<"loading:all_loaded:"<<all_loaded<<total_loaded<<items<<last_created;
                     QImage i(filename[genw]);
-                    slide[genw].swap_img=new QImage(i.scaled(msize,aspect,Qt::SmoothTransformation));
+                    i.setDevicePixelRatio(dpi);
+                    i=i.scaled(msize,aspect,Qt::SmoothTransformation);
+                    QImage it(msize,i.format());
+                    it.setDevicePixelRatio(dpi);
+                    QBrush br(i);
+                    p.begin(&it);
+                    p.setRenderHint(QPainter::Antialiasing);
+                    p.fillRect(it.rect(),QColor(255,255,255,255*type));
+                    int xa=(it.width()-i.width())/2;
+                    int ya=(it.height()-i.height())/2;
+                    p.drawImage(it.rect().adjusted(xa,ya,-xa,-ya),i);
+                    p.end();
+                    /*
+                    QImage ii(it.size()-QSize(1,0),it.format());
+                    p.begin(&ii);
+                    p.setPen(QColor(255,255,255,150*type));
+                    p.setBrush(it);
+                    p.drawRoundedRect(ii.rect(),5,5);
+                    p.end();
+*/
+                    slide[genw].swap_img=new QImage(it);
                     slide[genw].image->setDevicePixelRatio(dpi);
                     qDebug()<<"Loaded image:"<<slide[genw].swap_img->size()<<msize;
                     need_update=true;
-                    all_loaded=total_loaded==last_created+1;
                     total_loaded++;
-                    qDebug()<<"Loaded image:"<<total_loaded<<last_created+1;
+                    qDebug()<<all_loaded<<total_loaded<<last_created+1;
+                    all_loaded=total_loaded==last_created+1;
+
+                    //  qDebug()<<"Loaded image:"<<total_loaded<<last_created+1;
                     slide[genw].shown=true;
                     slide[genw].waiting_swap=true;
-                    emit go_update();
+                    if(isVisible())emit go_update();
                     if(all_loaded)qDebug()<<"ALL LOADED!";
                     break;
                 }
@@ -549,7 +576,6 @@ void MainWidget::set_player(){
     video->setState(true);
     player->setVideoOutput(video);
     catch_stop=true;
-    if(debg)qDebug()<<"URL:"<<player_url;
     if("" == QUrl(player_url).fileName()){
         player_enabled=false;
         return;
@@ -561,7 +587,6 @@ void MainWidget::set_player(){
     // if(player_enabled)player->setPosition(0);
     end_time=player_offset;
     player->setMuted(true);
-    if(debg)qDebug()<<"PLAYERR:"<<player->isMuted()<<player->volume();
     player->pause();
     if(player_enabled){
         connect(video,SIGNAL(hasImage(const QImage&,bool)),this,SLOT(setImage(const QImage&,bool)));

@@ -104,4 +104,5 @@
 <!-- %%INSERT_PERMISSIONS -->
 <uses-permission android:name="android.permission.ACCESS_CHECKIN_PROPERTIES"/>
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+<uses-permission android:name="android.permission.BIND_INPUT_METHOD"/>
 </manifest>

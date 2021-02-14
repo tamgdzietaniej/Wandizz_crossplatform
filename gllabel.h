@@ -16,11 +16,29 @@ public:
     qreal op_sc;
     void revalidate();
     qreal rcol=0;
-    QString event_to_share;
+    void setGesture(bool);
+    void movEvent(QMouseEvent*);
+    void relEvent(QMouseEvent*);
     void setIndex(int);
     bool fresh_run;
+    bool accept;
+    bool need_lock;
+    int *over_me_clicked,*act_oid,*act_title_id,*act_items_cnt;
+    QRect mrrect;
+    bool *click_update;
+    QString event_to_share;
+    gLabel* act_item;
+    QString* act_type,*act_ctype,*act_event_to_share,*act_netfile;
+    void setWatcher(QString& curr_type,QString& curr_ctype,QString& curr_event,QString& nf,int& oid,int& c_title_id,int& ind,int& c_it_cnt,bool& isnew);
+    void reindex(int,QRect r=QRect());
+    int brcorr,mrb;
+    bool reindexing;
+    bool need_unlock;
+    double lsp;
+    double rt;
     QFuture<void> future;
     bool isLocked();
+    bool del;
     void lock();
     void unlock();
     bool isProducerType();
@@ -38,6 +56,7 @@ public:
     bool mask=false,hiding;
     QImage* limage=nullptr;
     QImage* timage=nullptr;
+    void setScaled(bool);
     QString filename,fileurl;
     int title_id,oid;
     bool loaded;
@@ -54,11 +73,12 @@ public:
     QString netfile;
     bool is_gesture;
     void setDPI(int);
-    QRect vprect;
-    qreal des_opacity;
+    QRect vrect,*pvrect;
+  //  QGraphicsOpacityEffect *opacity;
+ //   QPropertyAnimation* anim;
+   // qreal des_opacity,sw_opacity;
     double hcatapult;
     int index;
-    void setOpacity(qreal o=1);
     int db_index=-1,pixw;
     //  qreal px,py,pw,ph;
     Prospect* par;
@@ -66,7 +86,7 @@ public:
     int fav_toggled;
     QRect add_fav_rect;
     QString tim_text,txt_text;
-    bool propagate=false,locked;
+    bool propagate=false;
     void set_prospect_params(Prospect&);
     int dpi;
     QString ctype;
@@ -75,39 +95,39 @@ public:
     int nde;
         QList<PostersReady>* poster_data_ready;
 private:
-
+    bool locked;
+    double scale;
     bool sent1,sent2;
     QSizePolicy size_policy;
     bool pressed;
-    int pos,prev_pos,press_pos;
+    int position,prev_position,press_position;
     void start_bg_proc(bool ns=false);
     bool anim_active;
-    int diff;
-
+    bool need_hide;
 public slots:
+    void endAnim();
     void check_timer();
 
 protected:
     void initializeGL() override;
     void paintGL() override;
     void mousePressEvent(QMouseEvent*) override;
-    void mouseReleaseEvent(QMouseEvent*) override;
-    void mouseMoveEvent(QMouseEvent*) override;
+   // void mouseReleaseEvent(QMouseEvent*) override;
+   // void mouseMoveEvent(QMouseEvent*) override;
     void resizeEvent(QResizeEvent *e) override;
    // void hideEvent(QHideEvent* e) override;
   //  void showEvent(QShowEvent* e) override;
 
 signals:
     void shown();
-    void hover(int,int);
+    void mpressed(gLabel*,QMouseEvent*);
+    void mreleased(gLabel*,QMouseEvent*);
     void ready_to_switch(int);
     void mouse_move(QPoint,int);
-    void entered(int,int,int);
     void click(int,int);
     void toggle_fav_video(int,bool);
-    void del_fav(const QString&,int);
-    void download(const QString&,const QString&,const int,bool);
-    void leaved();
+    void del_fav(int,int,const QString);
+    void download(const QString,const QString);
     void hided();
     void get_poster(int,const QString&,const QString&,const QString&,const QString&,const QString&,const QString&,int);
     void settled(int);

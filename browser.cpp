@@ -1,15 +1,17 @@
 #include "browser.h"
 
-browser::browser(QWidget *parent) : QQuickWidget(parent)
+browser::browser(QWidget *parent):QWidget(parent)
 {
-    setResizeMode(QQuickWidget::SizeRootObjectToView);
+
+    viewer=new QQuickView();
+    viewer->setResizeMode(QQuickView::SizeRootObjectToView);
     setAttribute(Qt::WA_DeleteOnClose);
-    setAttribute(Qt::WA_TranslucentBackground);
-    setClearColor(QColor(0,0,0,0));
+   // setAttribute(Qt::WA_TranslucentBackground);
+   // setClearColor(QColor(0,0,0,0));
     update();
     qDebug()<<"BROWSER";
     setStyleSheet("background:rgba(0,0,0,0);color:rgba(255,255,255,255);");
-    context=engine()->rootContext();
+    context=viewer->engine()->rootContext();
 }
 void browser::loadPage(QString url){
     context->setContextProperty(QStringLiteral("ref"),url);
@@ -17,5 +19,5 @@ void browser::loadPage(QString url){
     context->setContextProperty(QStringLiteral("h"),height());
     update();
     updateGeometry();
-    setSource(QUrl("qrc:/main.qml"));
+    viewer->setSource(QUrl("qrc:/main.qml"));
 }

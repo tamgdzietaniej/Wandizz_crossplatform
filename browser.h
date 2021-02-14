@@ -2,15 +2,18 @@
 #define BROWSER_H
 
 #include <QObject>
-#include <QQuickWidget>
+#include <QQuickView>
 #include <QQmlContext>
 #include <QQmlEngine>
-class browser : public QQuickWidget
+#include <QWidget>
+class browser : public QWidget
 {
     Q_OBJECT
 public:
     explicit browser(QWidget *parent = nullptr);
     QQmlContext* context;
+    QQuickView* viewer;
+    QQmlEngine eng;
     void loadPage(QString);
 };
 

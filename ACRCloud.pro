@@ -44,7 +44,6 @@ SOURCES += main.cpp \
     topmenuswitcher.cpp \
     userPermissions.cpp \
     userprof.cpp \
-    widget_wrapper.cpp \
     widgetgen.cpp \
     write_buffers.cpp# \
    # metasearch.cpp
@@ -83,7 +82,6 @@ audiolevel.h \
     topmenuswitcher.h \
     userPermissions.h \
     userprof.h \
-    widget_wrapper.h \
     widgetgen.h \
     write_buffers.h# \
    # metasearch.h
@@ -163,6 +161,7 @@ DISTFILES += \
 
 DISTFILES += \
     gui/APP ICONS/android/android-contact 13.09.56 13.09.56 13.09.56 13.09.56 13.09.56.png \
-    gui/icons/avatar_mini.png
+    gui/icons/avatar_mini.png \
+    main.qml
 
 

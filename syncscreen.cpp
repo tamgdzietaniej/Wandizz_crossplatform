@@ -402,7 +402,7 @@ void SyncScreen::show_carousel(){
 
 void SyncScreen::on_b_options_clicked()
 {
-    emit show_menu(ui->b_options->mapToGlobal(QPoint(0,0)));
+    emit go("menu",{});
 }
 QVector<qreal> getBufferLevels(const QAudioBuffer& buffer)
 {

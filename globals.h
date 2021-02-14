@@ -88,7 +88,7 @@ public:
 
 };
 
-static QString version="8.3.6.8";
+static QString version="8.3.6.12";
 static QString no_data_string="sorry, bu i haven't got any infrmation about it :(";
 static QString serverRoot="https://producer.wandizz.com";
 static QString update_url=serverRoot+"/apk/";

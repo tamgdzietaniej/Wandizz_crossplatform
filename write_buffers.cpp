@@ -54,6 +54,7 @@ void write_buffers::get_data(QNetworkReply* rep){
             } else {
                 qDebug()<<"Reply:"<<rep->bytesAvailable()<<rep->request().url();
                 QFile &local_file=sent.at(i)->file;
+                qDebug()<<"LOCAL FILE:"<<local_file;
                 QVariant pip= rep->attribute(QNetworkRequest::HttpPipeliningWasUsedAttribute);
                 bool file_exists(local_file.exists());
                 bool file_expired(false);

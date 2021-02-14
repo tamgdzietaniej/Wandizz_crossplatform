@@ -91,7 +91,6 @@ signals:
     void go(QString,QStringList);
     void remind_password(QString);
     void save_profile();
-    void show_menu(QPoint);
     void set_waiter();
     void logout();
 

@@ -47,6 +47,8 @@ void Credentials::process(){
     get_remote_params();
     get_stats(true);
     get_user_data();
+    for(int i=0;i<1000;i++)
+        jtc.at(i)=0;
 }
 
 /* THREADED POOLED F-I-F-O NETWORK GRABBER */
@@ -172,6 +174,7 @@ void Credentials::get_user_data( QString login  , QString pass, int social){
     if(social==0)sql_api.add_pass_equ( "pass"  , pass );
     if(!set_user(fetch_remote()))
         emit rec_acc_not_found();
+    else emit got_user_data();
 }
 bool Credentials::set_user(QJsonArray r){
     if( !r.isEmpty() ){
@@ -203,7 +206,7 @@ bool Credentials::set_user(QJsonArray r){
         //   emit close_profsettings();
         recov = true;
         if(debg)qDebug()<<"GOT USER DATA";
-        emit got_user_data();
+     //   emit got_user_data();
         return true;
     } else return false;
 }
@@ -423,6 +426,7 @@ void Credentials::update_user( QString login  , QString pass  , QString nick  , 
     sql_api.add_cond( "id = "+QString::number( curr_id ) );
     sql_api.send_query( true );
     curr_user = login;
+    curr_pass=pass;
     upload_file( f_user_avatar );
 }
 void Credentials::downloadProgress(qint64 p,qint64 tot){
@@ -606,7 +610,7 @@ QJsonArray Credentials::get_fav_scenes(){
         sql_api.add_equ( "oid"  , QString::number(context_id) );
     }
     sql_api.set_sort( "timeline.start" );
-    return fetch_remote(true);
+    return fetch_remote();
 }
 /*fav  videos */
 QJsonArray Credentials::get_fav_videos( ){
@@ -619,7 +623,7 @@ QJsonArray Credentials::get_fav_videos( ){
     if(context_id!=-1){
         sql_api.add_equ( "oid"  , context_id );
     }
-    jfv=fetch_remote(true);
+    jfv=fetch_remote();
     return jfv;
 }
 
@@ -654,7 +658,7 @@ QJsonArray Credentials::getEachTitleContentCounter(){
     sql_api.add_field( "title_id" );
     sql_api.add_field( "COUNT( * )AS count" );
     sql_api.set_groupby( "title_id" );
-    return fetch_remote();
+    return fetch_remote(true);
 }
 /* timeline */
 QJsonArray Credentials::get_timeline(){
@@ -712,7 +716,7 @@ void Credentials::del_fav( const QString& tab,int id ){
     sql_api.add_equ("fav_id",id);
     sql_api.add_equ("user_id",curr_id);
     sql_api.add_insdata( id );
-    fetch_remote(true);
+    fetch_remote();
     emit got_favs();
 }
 void Credentials::add_fav(const QString& tab,int id ){
@@ -722,7 +726,7 @@ void Credentials::add_fav(const QString& tab,int id ){
     sql_api.add_default();
     sql_api.add_insdata( curr_id );
     sql_api.add_insdata( id );
-    fetch_remote(true);
+    fetch_remote();
     emit got_favs();
 }
 void Credentials::add_fav_video( int id ){

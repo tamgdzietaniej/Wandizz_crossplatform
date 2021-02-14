@@ -1038,23 +1038,12 @@ color:white;
      <string notr="true">color:#000;</string>
     </property>
     <property name="text">
-     <string/>
+     <string>8.3.6.9</string>
     </property>
     <property name="alignment">
      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QOpenGLWidget" name="openGLWidget">
-    <property name="geometry">
-     <rect>
-      <x>315</x>
-      <y>210</y>
-      <width>1</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <zorder>openGLWidget</zorder>
    <zorder>version</zorder>
    <zorder>frame</zorder>
    <zorder>anframe</zorder>

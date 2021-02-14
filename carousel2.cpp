@@ -42,7 +42,7 @@ void Carousel::set_sliders(){
     isize=QSize(itemslider->geometry().height()+2,itemslider->geometry().height());
     sceneslider->wsize=ssize;
     itemslider->wsize=isize;
-    connect(itemslider,SIGNAL(go_web(QString)),this,SLOT(proceed_web(QString)));
+    connect(itemslider,SIGNAL(go(QString,QStringList)),this,SIGNAL(go(QString,QStringList)));
     connect(itemslider,SIGNAL(spin_friend(int)),this,SLOT(synchronize_scene_to_item(int)));
     connect(sceneslider,SIGNAL(spin_friend(int)),this,SLOT(synchronize_item_to_scene(int)));
     connect(itemslider,SIGNAL(add_fav_click()),this,SLOT(add_fav_item_clicked()));
@@ -215,7 +215,7 @@ void Carousel::parser(QNetworkReply* reply){
 }
 void Carousel::generate_widget(){
 
-    future = QtConcurrent::run([=]() {
+    //future = QtConcurrent::run([=]() {
         for(int wind=0;wind<events_counter;wind++){
             if(exiting){
                 break;
@@ -223,6 +223,7 @@ void Carousel::generate_widget(){
             if(!srequested.contains(ev_data[wind].scene_id)){
                 if(!QFileInfo::exists(ev_data[wind].frame_file)){
                     srequested.append(ev_data[wind].scene_id);
+
                     emit download(ev_data[wind].frame,ev_data[wind].frame_file);
 
                 }
@@ -236,7 +237,7 @@ void Carousel::generate_widget(){
             }
         }
 
-    });
+ //   });
 }
 void Carousel::can_proc(){
     qDebug()<<"CAN PROCESS";
@@ -302,9 +303,6 @@ void Carousel::setTitle2(const QString title){
 }
 void Carousel::setTitle2(){
     ui->title2->clear();
-}
-void Carousel::proceed_web(QString url){
-    emit go("web",{url});
 }
 void Carousel::set_curr_data(int i){
     faced_item_data=ev_data[i];
@@ -385,7 +383,7 @@ void Carousel::on_duration_sliderReleased(){
     slider_pressed=false;
 }
 void Carousel::on_b_options_clicked(){
-    emit show_menu(ui->b_options->mapToGlobal(QPoint(0,0)));
+    emit go("menu",{});
 }
 void Carousel::on_b_options_pressed(){
     old_ss=ui->b_options->styleSheet();

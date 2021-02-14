@@ -25,7 +25,8 @@ public:
     qreal xw,xh;
     QRect new_w_rect;
     qreal sFX,sFY,v_marg;
-
+    qreal scpan;
+    QRect upsect,dnsect;
     QRect update_geo(bool);
     bool fixed;
     bool resize_container_height;
@@ -34,10 +35,10 @@ public:
 
     QList<QWidget *> widgets;
     QList<QWidget *> rescale_list;
-
+    int gdiff,gmarg;
     QSize m_size;
     QRect m_geo;
-    QRect mv_geo;
+    QRect a_geo;
     qreal marg;
 public slots:
     void resizer(QWidget*,bool mode=false);

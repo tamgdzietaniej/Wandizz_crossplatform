@@ -22,8 +22,26 @@ topMenuSwitcher::topMenuSwitcher(QWidget *parent,int dopacity) : QOpenGLWidget(p
     b_clear=new QPushButton(sframe);
     b_search->setIcon(QPixmap(":/gui/icons/mag_glass_black.png"));
     b_clear->setIcon(QPixmap(":/gui/APP ICONS/clear.png"));
-    sframe->setVisible(false);
+    connect(edit,SIGNAL(textChanged(const QString&)),this,SIGNAL(textChanged(const QString&)));
+    connect(edit,SIGNAL(textChanged(const QString&)),this,SLOT(doUpdate(const QString&)));
+        connect(edit,SIGNAL(textEdited(const QString&)),this,SLOT(doUpdate2(const QString&)));
 
+    connect(b_clear,SIGNAL(clicked()),this,SLOT(clearEdit()));
+    sframe->setVisible(false);
+    edit->grabKeyboard();
+    connect(&t,SIGNAL(timeout()),this,SLOT(chkkeyb()));
+    QApplication::setCursorFlashTime(0);
+
+}
+void topMenuSwitcher::mousePressEvent(QMouseEvent* e){
+    get_hover(e->pos());
+}
+void topMenuSwitcher::chkkeyb(){
+    //  qDebug()<<"edit.key"<<keyboardGrabber();
+    if(QApplication::inputMethod()->isVisible()){
+        //    qDebug()<<"EDIT:"<<edit->keyboardGrabber();
+        update();
+    } else t.stop();
 }
 void topMenuSwitcher::initializeGL(){
     glClearColor(0,0,0,0);
@@ -32,21 +50,18 @@ void topMenuSwitcher::cvtog(){
     cv=!cv;
     update();
 }
+void topMenuSwitcher::showKB(bool s){
+    qApp->inputMethod()->setVisible(s);
+}
 void topMenuSwitcher::showKB(){
     if(isEditEn){
-        sframe->setEnabled(true);
-        sframe->setVisible(true);
         edit->setFocus();
         edit->grabKeyboard();
-        QApplication::inputMethod()->hide();
-        QApplication::inputMethod()->reset();
-        QApplication::inputMethod()->show();
-        edit->setFocus();
-        edit->grabKeyboard();
+        if(!qApp->inputMethod()->isVisible())qApp->inputMethod()->setVisible(true);
     } else {
         edit->releaseKeyboard();
-        sframe->setEnabled(false);
-        sframe->setVisible(false);
+        sframe->setEnabled(isEditEn);
+        sframe->setVisible(isEditEn);
     }
 
     ready_to_paint=true;
@@ -54,18 +69,21 @@ void topMenuSwitcher::showKB(){
 }
 void topMenuSwitcher::showSelectors(bool s){
     if(selector_visible!=s){
-        qDebug()<<"SHOW SELECTORS";
+        //  qDebug()<<"SHOW SELECTORS";
         selector_visible=s;
         update();
     }
 }
 void topMenuSwitcher::setSearchMode(bool s=false){
-    qDebug()<<"SETSEARCHMODE:"<<s<<(s && edit);
     s=s && edit;
     bool ie=isEdit==s;
     isEdit=s;
     isEditEn=s;
+    edit->setFocus();
+    edit->grabKeyboard();
+    t.start(500);
     if(!ie)QApplication::inputMethod()->setVisible(s);
+    //  edit->setFocus(Qt::FocusReason::MouseFocusReason);
     update();
 }
 void topMenuSwitcher::setupSearch(){
@@ -75,8 +93,8 @@ void topMenuSwitcher::setupSearch(){
     b_search->setStyleSheet(rstyle);
     b_clear->setStyleSheet(rstyle);
     edit->setAlignment(Qt::AlignCenter);
-    edit->setInputMethodHints(Qt::ImhLowercaseOnly | Qt::ImhNoTextHandles | Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText);
-    qDebug()<<"STYLE:"<<sframe->styleSheet();
+    edit->setInputMethodHints(Qt::ImhLowercaseOnly | Qt::ImhNoTextHandles | Qt::ImhNoAutoUppercase |
+                              Qt::ImhNoPredictiveText);
 }
 void topMenuSwitcher::setFrames(QWidget* lfrm_a,QWidget* lfrm_b){
     frames.clear();
@@ -96,7 +114,7 @@ void topMenuSwitcher::setFrames(QWidget* lfrm_a,QWidget* lfrm_b){
         int sx=30*devicePixelRatio();
         edit->setFont(QFont("Apple Gothic",ty/2));
         sframe->setGeometry(hx,hy,tx,ty);
-        qDebug()<<"SFRAME:"<<sframe->geometry()<<rect();
+        //    qDebug()<<"SFRAME:"<<sframe->geometry()<<rect();
         sframe->setFixedSize(tx,ty);
         b_search->setGeometry(5,0,sx,ty);
         b_clear->setGeometry(tx-5-sx,0,tx-5,ty);
@@ -106,17 +124,25 @@ void topMenuSwitcher::setFrames(QWidget* lfrm_a,QWidget* lfrm_b){
         edit->setFixedSize(sframe->size());
         b_search->setIconSize(QSize(23,18));
         b_clear->setIconSize(QSize(35,15));
-        qDebug()<<"EDIT"<<b_search->iconSize()<<sx;
+        //  qDebug()<<"EDIT"<<b_search->iconSize()<<sx;
         srchinited=true;
     }
-    disconnect(edit,SIGNAL(textChanged(const QString&)),this,SIGNAL(textChanged(const QString&)));
-    disconnect(edit,SIGNAL(textChanged(const QString&)),this,SLOT(update()));
-    connect(edit,SIGNAL(textChanged(const QString&)),this,SIGNAL(textChanged(const QString&)));
-    connect(edit,SIGNAL(textChanged(const QString&)),this,SLOT(doUpdate()));
-    connect(b_clear,SIGNAL(clicked()),this,SLOT(clearEdit()));
 }
-void topMenuSwitcher::doUpdate(){
-    edit->setFocus(Qt::FocusReason::MouseFocusReason);
+void topMenuSwitcher::doUpdate2(const QString& txt){
+    edit->setFocusPolicy(Qt::StrongFocus);
+    edit->setClearButtonEnabled(true);
+    edit->grabKeyboard();
+    edit->activateWindow();
+    qDebug()<<"EDIT UPDATE2:"<<txt;
+    edit->ensurePolished();
+    edit->repaint();
+}
+
+void topMenuSwitcher::doUpdate(const QString& txt){
+    edit->setFocusPolicy(Qt::StrongFocus);
+    edit->setClearButtonEnabled(true);
+    edit->grabKeyboard();
+    qDebug()<<"EDIT UPDATE:"<<txt;
     update();
 }
 void topMenuSwitcher::clearEdit(){
@@ -130,21 +156,26 @@ bool topMenuSwitcher::get_hover(QPoint pos){
     if(!ready_to_paint){
         return false;
     }
+    pos=mapFromGlobal(pos);
     QList<QPushButton*> wl;
     wl.clear();
     wl.append(frames.at(0)->findChildren<QPushButton*>(QString(),Qt::FindChildOptions(Qt::FindChildrenRecursively)));
     if(isEditEn){
-        if(edit->rect().adjusted(0,0,-20,0).contains(pos)){
+        if(sframe->geometry().contains(pos)){
             edit->setFocus(Qt::FocusReason::MouseFocusReason);
+#if defined(Q_OS_IOS)
             edit->grabKeyboard();
             if(!QApplication::inputMethod()->isVisible())
                 QApplication::inputMethod()->show();
+#endif
+            t.start(500);
             return false;
         }
     }
     if(wl.count()>0){
         for(int i=0;i<wl.count();i++){
-            if(wl.at(i)->rect().contains(wl.at(i)->mapFromGlobal(pos)) && wl.at(i)->isEnabled()){
+            qDebug()<<"WL"<<wl.at(i)->objectName()<<wl.at(i)->geometry()<<pos<<wl.at(i),isEnabled();
+            if(wl.at(i)->geometry().contains(pos) && wl.at(i)->isEnabled()){
                 wl.at(i)->click();
                 return false;
                 break;
@@ -166,8 +197,8 @@ void topMenuSwitcher::setPaintCanvas(QImage &i){
     paintEngine()->setPaintDevice(canvas);
 }
 void topMenuSwitcher::paintGL(){
-    qDebug()<<"SENDER:"<<sender();
-    qDebug()<<"SEARCH:"<<isEditEn<<ready_to_paint;
+    //  qDebug()<<"SENDER:"<<sender();
+    //  qDebug()<<"SEARCH:"<<isEditEn<<ready_to_paint;
     if(!ready_to_paint)return;
     QPainter painter(this);
     painter.beginNativePainting();
@@ -181,6 +212,6 @@ void topMenuSwitcher::paintGL(){
         painter.drawRoundedRect(sframe->geometry(),15,15);
         sframe->render(&painter,sframe->pos());
     }
-    qDebug()<<"PAINTED TOPMENU";
+    //  qDebug()<<"PAINTED TOPMENU";
 }
 topMenuSwitcher::~topMenuSwitcher(){qDebug()<<"Deleting tompenu";}

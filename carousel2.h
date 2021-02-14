@@ -119,7 +119,6 @@ private slots:
     void setTitle2(const QString);
     void setTitle();
     void setTitle2();
-    void proceed_web(QString);
     void on_duration_sliderMoved(int position);
     void on_duration_valueChanged(int value);
     void on_b_back_clicked();
@@ -154,11 +153,9 @@ signals:
     void add_fav_scene(int);
     void del_fav(const QString&,int);
     void go(QString,QStringList);
-    void go_web(QString);
     void go_user_prof();
     void sdebg(QString);
     void get_wdz(QString);
-    void show_menu(QPoint);
     void run_carousel();
     void no_file(int,bool);
     void got_data();

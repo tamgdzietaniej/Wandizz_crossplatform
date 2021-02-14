@@ -23,7 +23,7 @@
 	<key>CFBundleSignature</key>
 	<string>${QMAKE_PKGINFO_TYPEINFO}</string>
 	<key>CFBundleVersion</key>
-	<string>6.9</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>DefaultDeploymentTarget</key>
 	<string>13.2</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

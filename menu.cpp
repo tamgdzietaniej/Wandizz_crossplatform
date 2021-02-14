@@ -12,7 +12,7 @@ menu::menu(QWidget *parent) :
 {
     ui->setupUi(this);
     setObjectName("menu");
-    setWindowFlag(Qt::FramelessWindowHint);
+  //  setWindowFlag(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_DeleteOnClose,true);
     setAttribute(Qt::WA_AlwaysStackOnTop);
     showing=true;
@@ -22,7 +22,6 @@ menu::menu(QWidget *parent) :
     QList<QPushButton*> tw=ui->bar->findChildren<QPushButton*>();
     for(int i=0;i<tw.count();i++)
         connect(tw.at(i),SIGNAL(clicked()),this,SLOT(on_select()));
-    set_opt_geo();
 }
 void menu::setContext(bool c){
     is_context=c;
@@ -37,7 +36,7 @@ void menu::set_access(bool a){
         qDebug()<<"MENU:"<<tw.at(i)->objectName()<<tw.at(i)->isEnabled();
     }
     update();
-   // qDebug()<<"MENU:"<<a;
+    // qDebug()<<"MENU:"<<a;
 }
 void menu::deactivate(QString s,QStringList ss){
     if(!is_context)return;
@@ -46,7 +45,6 @@ void menu::deactivate(QString s,QStringList ss){
             s.prepend("s_");
         }
     }
-    qDebug()<<"NGEN:MENU:"<<s;
     QList<QPushButton*> tw=ui->bar->findChildren<QPushButton*>();
     for(int i=0;i<tw.count();i++)
         tw.at(i)->setDisabled(s==tw.at(i)->objectName());
@@ -54,19 +52,20 @@ void menu::deactivate(QString s,QStringList ss){
     if(ss.contains("both"))deactivate(s,{"search"});
 }
 void menu::set_opt_geo(){
-    int x=geometry().right()-60*(QApplication::primaryScreen()->geometry().width()/400);
-    int y=20*(QApplication::primaryScreen()->geometry().height()/710)-mapFromGlobal(QPoint(0,0)).y();
-    ui->options->move(x,y);
-    qDebug()<<"MOVE:"<<x,y;
+    int x=(double)340*((double)QApplication::primaryScreen()->geometry().width()/(double)400)-geometry().left();
+ //   int x=geometry().right()-0*(QApplication::primaryScreen()->geometry().width()/400);
+    int y=mapFromGlobal(QPoint(0,0)).y();
+    ui->menu_hide->move(x,y);
+    qDebug()<<"MOVE:"<<x<<y<<(double)340*((double)QApplication::primaryScreen()->geometry().width()/(double)400);
 }
 void menu::getGeo(){
     qDebug()<<"getgeo"<<geometry()<<ui->frame->geometry()<<ui->bar->geometry();
+    set_opt_geo();
 }
 menu::~menu()
 {
     delete ui;
 }
-
 void menu::resizeEvent(QResizeEvent *e){
     ui->frame->setFixedSize(e->size());
     ui->bar->setFixedSize(e->size());
@@ -75,8 +74,16 @@ void menu::on_select()
 {
     QStringList ons({});
     QString on=sender()->objectName();
-    if(on.left(2)=="s_")
+    if(on.left(2)=="s_"){
         on=on.mid(2);
-    ons.append("search");
+        ons.append("search");
+    }
     emit go(on,ons);
+}
+
+
+
+void menu::on_menu_hide_clicked()
+{
+    emit go("menu",{});
 }

@@ -6,7 +6,7 @@
 #include <QQmlContext>
 #include <QQmlEngine>
 #include <QMainWindow>
-#include "browser.h"
+#include <QMessageBox>
 namespace Ui {
 class webhelper;
 }
@@ -19,12 +19,11 @@ public:
     explicit socialLogin(QWidget *parent = nullptr);
     ~socialLogin() override;
     void resize_win(int);
-    browser* w;
-    QString act_url;
     void createWebView();
     void setAppleLogin();
     void setFacebookLogin();
 private:
+    QQuickView* viewer;
     QString b_close_look,b_again_look;
     //    QStackedLayout* lay;
     Ui::webhelper *ui;
@@ -43,10 +42,9 @@ public slots:
 
 signals:
     void needLogin();
-    void go(QString);
+    void go(QString,QStringList);
     void gotSocialData(QString,QString,QString,QString,QString);
     void gotAppleId(QString);
-    void go(QString,QStringList);
 
 
 protected:

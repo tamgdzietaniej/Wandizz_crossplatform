@@ -85,18 +85,20 @@ void userProf::on_b_video_recognition_clicked(){
     if(!offline)
         go("sync",{});
 }
-
+void userProf::corr(){
+    ui->titles_cnt->move(ui->b_videos->geometry().right()-ui->titles_cnt->width(),ui->b_videos->height()/2-ui->titles_cnt->height()/2);
+    ui->titles_cnt->raise();
+    update();
+}
 void userProf::on_b_options_clicked(){
+    qDebug()<<"GEO:"<<ui->b_videos->geometry()<<ui->titles_cnt->geometry();
     //vibra->vibr(1);
-    emit show_menu(ui->b_options->mapToGlobal(QPoint(0,0)));
+    emit go("menu",{});
 }
 
 void userProf::on_b_exit_clicked(){
     //vibra->vibr(1);
-    emit exit_app();
-}
-void userProf::on_b_search_clicked(){
-    emit go("videos",{"search"});
+    emit go("exit_app",{});
 }
 void userProf::animateButtonPress(QObject* s){
     QPushButton* b=static_cast<QPushButton*>(s);
@@ -127,11 +129,6 @@ void userProf::on_b_videos_pressed()
     animateButtonPress(sender());
 }
 
-void userProf::on_b_search_pressed()
-{
-    animateButtonPress(sender());
-}
-
 void userProf::on_b_settings_pressed()
 {
     animateButtonPress(sender());
@@ -153,11 +150,6 @@ void userProf::on_b_favourites_released()
 }
 
 void userProf::on_b_videos_released()
-{
-    animateButtonRel();
-}
-
-void userProf::on_b_search_released()
 {
     animateButtonRel();
 }

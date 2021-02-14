@@ -40,13 +40,11 @@ profSettings::profSettings(QWidget *parent) :
     pressed=true;
     setAttribute(Qt::WA_DeleteOnClose);
     t->setSingleShot(true);
-    qDebug()<<"UI:"<<ui->but_name->isVisible();
     ui->shadow->setParent(ui->verticalWidget);
     ui->b_linked->hide();
     ui->shadow->hide();
 }
 void profSettings::setInitVars(bool social){
-    qDebug()<<"SET INIT VARS:"<<upd_nick<<upd_login<<upd_phon;
     if(social==1)ui->b_linked->show();
     init_nick=upd_nick;
     init_email=upd_login;
@@ -132,7 +130,6 @@ bool profSettings::check_email_conditions(){
     return true;
 }
 void profSettings::set_email(QString e,bool to_save){
-    qDebug()<<"SET EMAIL:"<<e<<prev_text;
     if(e!=""){
         ui->but_email->setText(e);
         ui->edit_email->setText(e);
@@ -170,7 +167,6 @@ void profSettings::set_nick(QString e, bool to_save){
     ui->but_name->show();
     ui->but_name->raise();
     ui->edit_name->hide();
-    qDebug()<<"Set nick:"<<upd_nick<<ui->but_name->isVisible()<<ui->but_name->text();
 }
 bool profSettings::checkEmail(bool ex){
     email_exists=ex;
@@ -316,7 +312,7 @@ void profSettings::on_edit_name_returnPressed(){
 }
 void profSettings::on_b_options_clicked()
 {
-    emit show_menu(ui->b_options->mapToGlobal(QPoint(0,0)));
+    emit go("menu",{});
 }
 void profSettings::on_b_options_pressed()
 {
@@ -335,11 +331,8 @@ void profSettings::set_recovery_mode(){
     set_recovery_mode(true);
 }
 void profSettings::set_recovery_mode(bool rec){
-    qDebug()<<"SET REC MODE:"<<rec;
     recovery_mode=rec;
     ui->b_add_foto->setVisible(!rec);
-    ui->edit_name->setVisible(!rec);
-    ui->edit_phone->setVisible(!rec);
     ui->but_name->setVisible(!rec);
     ui->but_phone->setVisible(!rec);
     ui->icon_phone->setVisible(!rec);

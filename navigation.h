@@ -16,9 +16,7 @@
 #include "downloader.h"
 #include "downloaderStd.h"
 #include "socialLogin.h"
-#include "myvideosurface.h"
 #include "userPermissions.h"
-#include "widget_wrapper.h"
 class navigation:public QStackedWidget{
     Q_OBJECT
 public:
@@ -31,12 +29,11 @@ public:
 #endif
     QString gone_to;
     QString carousel_title;
-    QString s_curr_id,curr_user,curr_nick,curr_phone;
     QString url_to_load="";
     QStringList fav_scenes_list,fav_items_list,fav_videos_list;
     QString user_data="";
     bool msearch_in_action;
-    bool menuopened;
+    bool menuopened,fav_modified;
     QString curr_favs;
     //  QThread mthread;
     bool creds_ok=false;
@@ -48,9 +45,10 @@ public:
     void resetContext();
     bool splash,fresh_run;
     QWidget* parm;
-    bool navlock();
-    bool unlock();
+
+
     QString web_url;
+
     QFrame* msrch;
     bool lock;
     QScreen* gs = QApplication::primaryScreen();
@@ -63,7 +61,7 @@ public:
     bool showed;
     int curr_social2=0;
     QThread mythread;
-
+    QStringList lparams;
     bool save_clicked;
     bool shadow;
     QString fav_opened;
@@ -81,11 +79,13 @@ public:
     void init_menu();
     QLabel* waiter;
     QPixmap* waiter_anim;
+    bool prospect_shown;
     QLinearGradient gradient,gradient2;
     bool debg;
-    QOpenGLWidget* w;
     QWidget* rwidget;
     QStringList prev_cpars,prev_mpars;
+    QRect mg;
+
 public slots:
     void set_labels();
     void init_app();
@@ -117,12 +117,12 @@ public slots:
 private slots:
     void showMenu();
     void hideMenu();
+    void setFavModified();
     void setSocialData(QString,QString,QString,QString,QString);
     void rollin_carousel();
     void terminateCreds();
     void remind_password(QString);
     void update_user(QString,QString,QString,QString);
-    void get_current_user_data();
     void go_to(QString,QStringList params={});
     void navigate_upon_user_data();
     void recovery_user();
@@ -130,18 +130,18 @@ private slots:
     void show_carousel();
     void exit_app();
     void must_revalidate_widget(int);
+
     void updateFavs();
 private:
     QStringList curr_params;
     bool isCWName(QString);
-    void implodeContent();
     QPointer<widgetGen> wgen=nullptr;
     downloader* media_queue;
     void show_profsettings();
     void show_module(QWidget* to=nullptr);
     QWidget* to_show;
     int offset_ms;
-    geofit* geom;
+    geofit geom;
     bool menu_opened;
 #if defined(Q_OS_ANDROID)
     void set_splash();
@@ -157,6 +157,8 @@ public:
     QPointer<localization> gps=nullptr;
 protected:
     void paintEvent(QPaintEvent*) override;
+    void mousePressEvent(QMouseEvent* e) override;
+    //void mouseReleaseEvent(QMouseEvent* e) override;
 
 signals:
     void turn_ss_off();

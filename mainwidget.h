@@ -160,6 +160,7 @@ private:
     qreal get_trip_to(int);
     int closer_neighbour;
     QImage button_pix[2],forbid;
+    double prp,prl,prm;
     bool all_rendered;
     qreal get_trip_home();
     bool shwd;
@@ -178,7 +179,7 @@ signals:
     void wshow(int);
     void stop_p();
     void spin_friend(int);
-    void go_web(QString);
+    void go(QString,QStringList);
     void set_favs_look_on_start(int);
     void download(QString,QString);
     void add_fav_click();

@@ -16,8 +16,10 @@ public:
     void setPaintCanvas(QImage&);
     bool srchinited;
     void forceUpdate();
+    void showKB(bool);
     void showKB();
     bool ready_to_paint;
+    QTimer t;
     void setSearchMode(bool);
     void setupSearch();
     QLineEdit* edit=nullptr;
@@ -37,13 +39,17 @@ protected:
     void paintGL() override;
     void initializeGL() override;
     void resizeEvent(QResizeEvent *e) override;
+    void mousePressEvent(QMouseEvent*) override;
 signals:
     void textChanged(const QString&);
     void need_filter();
+
 private  slots:
     void cvtog();
     void clearEdit();
-    void doUpdate();
+    void chkkeyb();
+    void doUpdate(const QString& txt);
+    void doUpdate2(const QString& txt);
 };
 
 #endif // TOPMENUSWITCHER_H

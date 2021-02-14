@@ -9,20 +9,19 @@ SignIn::SignIn(QWidget *parent) :
     init();
 }
 void SignIn::init(){
-    toggle_auth(false);
+    toggle_auth(true);
 #if defined (Q_OS_IOS)
     ui->b_twitter->setText("Sign with Apple");
 #else
     ui->b_twitter->setText("Sign with Google");
 #endif
-
 }
 void SignIn::shSs(){;
     ui->logo_mid->raise();
     ui->logo_mid->show();
 }
 void SignIn::toggle_auth(bool toggle){
-    ui->verlabel->setText("ver:"+version);
+
     //  ui->anframe->move(0,height()-ui->anframe->height());
     ui->anframe->setEnabled(toggle);
     ui->anframe->setVisible(toggle);

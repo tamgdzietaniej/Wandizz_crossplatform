@@ -21,8 +21,11 @@ public:
     void set_access(bool);
     bool is_access,is_context;
     void setContext(bool);
-public slots:
+private slots:
     void on_select();
+
+
+    void on_menu_hide_clicked();
 
 protected:
     void resizeEvent(QResizeEvent*) override;

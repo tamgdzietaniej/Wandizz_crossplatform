@@ -8,40 +8,20 @@ void navigation::restart_clean(){
     creds_ok=false;
     updated=false;
     shadow=false;
+    prospect_shown=false;
     int wc=count();
     for(int i=0;i<wc;i++){
         if(widget(i)!=sign_in){
-            // widget(i)->deleteLater();
-            delete widget(i);
+            widget(i)->deleteLater();
         }
     }
     init_app();
-    go_to("sign_in");
-}
-void navigation::get_current_user_data(){
-    offline_mode=credentials->offline_m;
-    if(!offline){
-        s_curr_id=QString::number(credentials->curr_id);
-        curr_user=credentials->curr_user;
-        curr_nick=credentials->curr_nick;
-        curr_phone=credentials->curr_phone;
-    } else {
-        if(QFileInfo::exists(f_user_login) && QFileInfo::exists(f_user_id) && QFileInfo::exists(f_user_nick)){
-            curr_user=credentials->getFile(f_user_login);
-            s_curr_id=credentials->getFile(f_user_id);
-            curr_nick=credentials->getFile(f_user_nick);
-            curr_phone=credentials->getFile(f_user_phone);
-
-        } else {
-            info("Sorry, but to use WANDIZZ, it must be initialized online once.\n Application will now exit.");
-            QApplication::exit();
-        }
-    }
+    //   go_to("sign_in");
 }
 void navigation::check_email_exists(QString email,bool){
     profsettings->must_chk_email=false;
-    if(email==curr_user){
-        if(debg)qDebug()<<"email=curr_user"<<curr_user;
+    if(email==credentials->curr_user){
+        if(debg)qDebug()<<"email=curr_user"<<credentials->curr_user;
         return;
     }
     profsettings->checkEmail(credentials->check_user(email)!=0);
@@ -52,15 +32,8 @@ void navigation::save_profile(){
     go_to("back");
 }
 void navigation::update_user(QString login,QString pass,QString nick,QString phone){
-
     credentials->update_user(login,pass,nick,phone);
     updated=true;
-    curr_user=credentials->curr_user=login;
-    curr_nick=credentials->curr_nick=nick;
-    curr_phone=credentials->curr_phone=phone;
-    credentials->curr_pass=pass;
-    if(debg)qDebug()<<curr_user<<curr_nick<<curr_phone;
-    credentials->upload_file(f_user_avatar);
 }
 void navigation::recovery_user(){
     credentials->get_user_data(profsettings->upd_login,profsettings->upd_pass);
@@ -78,36 +51,14 @@ void navigation::proceed_gps(){
 
 // FORMS INIT
 void navigation::proceed_sign_in(){
+    if(debg)qDebug()<<"SIGN IN";
     if(sign_in==nullptr){
         sign_in=new SignIn();
         sign_in->setObjectName("sign_in");
-        geom->resizer(sign_in);
+        geom.resizer(sign_in);
         connect(sign_in,SIGNAL(go(QString,QStringList)),this,SLOT(go_to(QString,QStringList)),Qt::QueuedConnection);
 
     }
-}
-bool navigation::navlock(){
-    if(lock){
-        if(debg)qDebug()<<"Locked already";
-        return true;
-    }
-    else
-    {
-        lock=true;
-        if(count()>0){
-            currentWidget()->setEnabled(false);
-        }
-        return false;
-    }
-}
-bool navigation::unlock(){
-    bool test=lock;
-    lock=false;
-    if(count()>0){
-        if(!currentWidget()->isEnabled())
-            currentWidget()->setEnabled(true);
-    }
-    return test;
 }
 void navigation::share(){
     QString text = "WANDIZZ-HAVE to HAVE";
@@ -120,217 +71,204 @@ void navigation::share(){
     share->share( text, url );
 #endif
 }
-void navigation::implodeContent(){
-    if(wgen!=nullptr){
-        if(wgen->isExpanded()){
-            wgen->lock();
-        }
-    }
-}
 bool navigation::isCWName(QString n){
     if(!count())return false;
     return currentWidget()->objectName()==n;
 }
 // mrk::go_to
 void navigation::go_to(QString to,QStringList params){
+    qDebug()<<"TO:"<<to<<params<<prospect_shown;
     curr_params=params;
-    menu_opened=false;
-    if(count()==0){
-        to="sign_in";
-    }
-    else{
-        if(to=="web"){
-            QDesktopServices::openUrl(QUrl(params.takeFirst()));
-            return;
-        } else if(to=="exit_app"){
-            deleteLater();
-            return;
-        }
-        if(mmenu!=nullptr){
-            if(to=="options" && sender()==mmenu){
-                hideMenu();
-            }
-            menu_opened=mmenu->isVisible();
-        }
-        if(menu_opened){
-            mmenu->hide();
-            menu_opened=false;
-        }
-        /* RE-USABLE STUFF */
-        qDebug()<<"goto:"<<to<<menu_opened;
-
-        if(videos!=nullptr)
-            if(currentWidget()==videos)
-                videos->wgen->toggleBricks(false);
-
-
-        // silent=false;
-        //  media_queue->gclearList();
-        /* " ACTION:Back  */
-        if(to.contains("back")){
-            //    if(count()>0){
-            qDebug()<<"gotob:"<<to;
-            if(menu_opened){
-                hideMenu();
-                currentWidget()->setEnabled(true);
-                currentWidget()->activateWindow();
-                if(currentWidget()==videos){
-                    videos->activateContainer();
-                }
-            } else {
-                int cn=count();
-                removeWidget(currentWidget());
-                update();
-                qDebug()<<currentWidget()->objectName();
-                qDebug()<<"BACK -> redirect to:"<<currentWidget();
-                if(count()>1)
-                    go_to(currentWidget()->objectName(),{"last"});
-                else go_to("userprof");
-            }
-            return;
-        } else
-            currentWidget()->hide();
-        QApplication::processEvents();
-        /* FULL WANDIZZ */
-        if(to=="full"){
-            credentials->context="";
-            credentials->context_id=-1;
-            updateFavs();
-            go_to("userprof");
-            qDebug()<<"FULL";
-            return;
-        } else
-            /* ADMINISTRATION REDIR */
-            // user profile screen
-            if(to=="userprof"){  //user-profile
-            if(params.count()==3){  // set context form prospect
-                /* MAKE CONTEXT */
-                if(params.at(0)=="context"){
-                    params.takeFirst();
-                    credentials->context=params.takeFirst();
-                    credentials->context_id=params.takeFirst().toInt();
-                    if(mmenu!=nullptr)
-                        mmenu->setContext(true);
-                    updateFavs();
-                }
-            }
-            proceed_userprof();
-            show_module(userprof);
-            // proper destination -> profile [home] screen
-        }
-        /* SHARE */
-        if(to=="share"){ //share
-            share();
-            return;
-        } else
-            /* ACCOUNT RECOVERY */
-            if(to=="profset"){  //profile page
-            proceed_profsettings(params.contains("accrec"));
-            shadow=true;
-            show_module(profsettings);
-        } else
-            /* SYNC-SCREEN */
-            if(to=="sync"){  // videorec
-            proceed_sync();
-            shadow=true;
-            show_module(sync);
-        } else
-            /* LAUNCH MENU */
-            if(to=="menu"){  // mmenu
+    shadow=(to!="sign_in" && to!="userprof");
+    update();
+    /* LAUNCH MENU */
+    //   if(menu_opened && senatyder()!=mmenu){
+    //       qDebug()<<"MENU VISIBLE:"<<menu_opened;
+    //      hideMenu();
+    //      return;
+    //  }
+    if(to=="menu"){  // mmenu
+        if(QApplication::inputMethod()->isVisible())
+            QApplication::inputMethod()->hide();
+        if(menu_opened)hideMenu();
+        else
             showMenu();
+        return;
+    }
+    if(menu_opened)hideMenu();
+    if(to=="menu_hide")
+        return;
+    /* SHARE */
+    if(to=="share"){ //share
+        share();
+        return;
+    }
+    if(to=="m_share"){
+        go_to("share");
+        return;
+    }
+    if(to=="legal"){
+        QMessageBox::information(this,"Legal","Legal info soon");
+        return;
+    }
+    if(to=="security"){
+        QMessageBox::information(this,"Security","");
+        return;
+    }
+    //   qDebug()<<"Pars:"<<params<<curr_params;
+    if(count()>0)
+        if(to==currentWidget()->objectName() && !params.contains("back") && params==lparams){
+            qDebug()<<"Already here";
             return;
-        } else
-            /* GO "FAVS" BUTTON PRESSED [JUST FAVS - not PRECISED WHICH] */
-            if(to=="favs"){
-            to="fav_videos";
-            // determine which are not empty
-            if(!fav_videos->count()){
-                if(fav_scenes->count()){
-                    to="fav_scenes";
-                } else if(fav_items->count()){
-                    to="fav_items";
-                }
+        }
+    if(to=="web"){
+        QDesktopServices::openUrl(QUrl(params.takeFirst()));
+        return;
+    } else if(to=="exit_app"){
+        exit_app();
+        return;
+    }
+    /* RE-USABLE STUFF */
+    /* " ACTION:Back  */
+    if(!wgen->isLocked()){
+        wgen->clean();
+    }
+    if(to.contains("back")){
+        removeWidget(currentWidget());
+        if(currentWidget()==videos){
+            wgen->unlock();
+            update();
+        }
+        if(count()>0)
+            go_to(currentWidget()->objectName(),{"last","back"});
+        else go_to("userprof",{});
+        return;
+    }
+    /* FULL WANDIZZ */
+    if(to=="full"){
+        credentials->context="";
+        credentials->context_id=-1;
+        updateFavs();
+        go_to("userprof");
+        return;
+    }
+    /* ADMINISTRATION REDIR */
+    // user profile screen
+    if(to=="userprof"){  //user-profile
+        if(params.count()==3){  // set context form prospect
+            /* MAKE CONTEXT */
+            if(params.at(0)=="context"){
+                params.takeFirst();
+                credentials->context=params.takeFirst();
+                credentials->context_id=params.takeFirst().toInt();
+                if(mmenu!=nullptr)
+                    mmenu->setContext(true);
+                updateFavs();
             }
         }
-        if(to=="videos"){
-            proceed_media("videos");
-            shadow=true;
+        proceed_userprof();
+        show_module(userprof);
+        userprof->corr();
+        // proper destination -> profile [home] screen
+    }
+    /* ACCOUNT RECOVERY */
+    if(to=="profset"){  //profile page
+        proceed_profsettings(params.contains("accrec"));
+        show_module(profsettings);
+    } else
+        /* SYNC-SCREEN */
+        if(to=="sync"){  // videorec
+        proceed_sync();
+        show_module(sync);
+    } else
+        /* GO "FAVS" BUTTON PRESSED [JUST FAVS - not PRECISED WHICH] */
+        if(to=="favs"){
+        to="fav_videos";
+        // determine which are not empty
+        if(!fav_videos->count()){
+            if(fav_scenes->count()){
+                to="fav_scenes";
+            } else if(fav_items->count()){
+                to="fav_items";
+            }
+        }
+    }
+    if(to=="videos"){
+        proceed_media("videos");
+        show_module(videos);
+        videos->create_videos_list(credentials->timeline_count_by_title_id,media);
+        return;
+    }
+    else
+        if(to=="prospect"){
+        prospect_shown=true;
+        proceed_media("prospect");
+        show_module(videos);
+        videos->create_prospect_list(credentials->timeline_count_by_title_id,media);
+        return;
+    }
+    else
+        if(to=="carousel"){
+        if(params.count()==5){
+            prev_cpars.clear();
+            prev_cpars.append(params);
+        }
+        proceed_carousel(prev_cpars);
+        show_module(carousel);
+    } else
+        if(to=="fav_scenes"){
+        if(fav_scenes->count() || show_even_if_zero){
+            proceed_media("fav_scenes");
             show_module(videos);
-            videos->create_videos_list(credentials->timeline_count_by_title_id,media);
+            videos->create_scenes_list(credentials->timeline_count_by_title_id,fav_scenes);
             return;
         }
-        else
-            if(to=="prospect"){
-            proceed_media("prospect");
-            shadow=true;
+    } else
+        if(to=="fav_items"){
+        if(fav_items->count() || show_even_if_zero){
+            proceed_media("fav_items");
             show_module(videos);
-            videos->create_prospect_list(credentials->timeline_count_by_title_id,media);
+            videos->create_items_list(fav_items);
             return;
         }
-        else
-            if(to=="carousel"){
-            shadow=true;
-            if(params.count()==5){
-                prev_cpars.clear();
-                prev_cpars.append(params);
-            }
-            proceed_carousel(prev_cpars);
-            show_module(carousel);
-        } else
-            if(to=="fav_scenes"){
-            if(fav_scenes->count() || show_even_if_zero){
-                proceed_media("fav_scenes");
-                shadow=true;
-                show_module(videos);
-                videos->create_scenes_list(credentials->timeline_count_by_title_id,fav_scenes);
-                return;
-            }
-        } else
-            if(to=="fav_items"){
-            if(fav_items->count() || show_even_if_zero){
-                proceed_media("fav_items");
-                shadow=true;
-                show_module(videos);
-                videos->create_items_list(fav_items);
-                return;
-            }
-        } else
-            if(to=="fav_videos"){
-            if(fav_videos->count() || show_even_if_zero){
-                proceed_media("fav_videos");
-                shadow=true;
-                show_module(videos);
-                qDebug()<<fav_videos;
-                videos->create_fvideos_list(credentials->timeline_count_by_title_id,fav_videos);
-                return;
-            }
-        } else
-            /* SOCIAL LOGINS */
-            if(to=="loginFB"){
-            proceed_webview();
-            webview->setFacebookLogin();
-            webview->setUrl(loginFBurl+"?action="+params.takeFirst());
-            show_module(webview);
+    } else
+        if(to=="fav_videos"){
+        if(fav_videos->count() || show_even_if_zero){
+            proceed_media("fav_videos");
+            show_module(videos);
+            videos->create_fvideos_list(credentials->timeline_count_by_title_id,fav_videos);
+            return;
         }
-        else if(to=="loginTT"){
-            proceed_webview();
-            webview->setUrl(loginTWurl+"?action="+params.takeFirst());
-            show_module(webview);
-        }
-        else if(to=="loginGoogle"){
+    } else
+        /* SOCIAL LOGINS */
+        if(to=="loginFB"){
+        proceed_webview();
+        webview->setFacebookLogin();
+        webview->setUrl(loginFBurl+"?action="+params.takeFirst());
+        show_module(webview);
+    }
+    else if(to=="loginTT"){
+        proceed_webview();
+        webview->setUrl(loginTWurl+"?action="+params.takeFirst());
+        show_module(webview);
+    }
+    else if(to=="loginGoogle"){
 
-        }
-        else if(to=="loginApple"){
-            QByteArray secret(credentials->get_jwt());
-            QString url=loginAPurl+"?response_type=code&client_id=com.wandizz.producer&scope=email%20name&response_mode=form_post&usePopup=false&redirect_uri=https://producer.wandizz.com/authorize/apple/check.php";
-            proceed_webview();
-            webview->setAppleLogin();
-            webview->setUrl(url);
-            show_module(webview);
-        }
+    }
+    else if(to=="loginApple"){
+        QByteArray secret(credentials->get_jwt());
+        QString url=loginAPurl+"?response_type=code&client_id=com.wandizz.producer&scope=email%20name&response_mode=form_post&usePopup=false&redirect_uri=https://producer.wandizz.com/authorize/apple/check.php";
+        proceed_webview();
+        webview->setAppleLogin();
+        webview->setUrl(url);
+        show_module(webview);
     }
     if(to=="sign_in"){
-        shadow=false;
+        if(webview!=nullptr){
+            removeWidget(webview);
+            qDebug()<<"Deleting webview";
+            webview->deleteLater();
+        }
         proceed_sign_in();
         show_module(sign_in);
     }
@@ -342,27 +280,34 @@ void navigation::show_module(QWidget* to){
         QtAndroid::hideSplashScreen();
     splash=false;
 #endif
-    unlock();
+    lparams=curr_params;
     if(to!=nullptr)
     {
-        if(currentWidget()!=to)
-            addWidget(to);
-        set_labels();
-        if(count()==2 && to->objectName()!="prospect"){
+        addWidget(to);
+        //qDebug()<<"SHOW MODUULE:"<<count();
+        //    if(count()==2 && to->objectName()!="prospect" && to->objectName()!="profset"){
+        if(!prospect_shown && to!=profsettings && to!=sign_in && to!=webview){
             go_to("prospect",{"search"});
             return;
         }
-        to->setEnabled(true);
         setCurrentWidget(to);
         currentWidget()->raise();
         currentWidget()->showFullScreen();
-        currentWidget()->activateWindow();
-        update();
-        rwidget->show();
-        QApplication::processEvents();
-        rwidget->hide();
+        if(currentWidget()!=videos)
+            currentWidget()->activateWindow();
+        else
+        {
+            if(wgen){
+                qDebug()<<"WGEN:"<<wgen;
+                wgen->activateWindow();
+            }
+        }
     }
     disableCurrMenuEntry();
+}
+void navigation::mousePressEvent(QMouseEvent* e){
+    if(mmenu->isVisible() || menu_opened)
+        hideMenu();
 }
 void navigation::resetContext(){
     credentials->context="";
@@ -370,7 +315,6 @@ void navigation::resetContext(){
     updateFavs();
 }
 void navigation::updateFavs(){
-    qDebug()<<"UpdateFavs";
     credentials->get_favs(true);
     credentials->get_stats(true);
     credentials->prepare_titles();
@@ -393,7 +337,7 @@ void navigation::updateFavs(){
             else if(wgen->getContext().contains("fav_scenes"))c=fav_scenes->count();
             else if(wgen->getContext().contains("fav_items"))c=fav_items->count();
             else if(wgen->getContext().contains("videos"))c=titles_cnt;
-            else qDebug()<<"!!! set_favs_cnt:"<<wgen->getContext();
+            //  else qDebug()<<"!!! set_favs_cnt:"<<wgen->getContext();
             if(wgen->getContext()!="prospect") videos->set_favs_cnt(c);
         }
 }
@@ -405,14 +349,14 @@ void navigation::proceed_sync(){
     if(sync==nullptr){
         sync=new SyncScreen();
         sync->setObjectName("sync");
-        geom->resizer(sync);
+        geom.resizer(sync);
         sync->initClasses();
-        sync->screenw=geom->nw;
-        sync->screenh=geom->nh;
+        sync->screenw=geom.nw;
+        sync->screenh=geom.nh;
         connect(sync,SIGNAL(go(QString,QStringList)),this,SLOT(go_to(QString,QStringList)));
     }
-    sync->curr_user=curr_user;
-    sync->curr_id=s_curr_id;
+    sync->curr_user=credentials->curr_user;
+    sync->curr_id=QString::number(credentials->curr_id);
 }
 void navigation::proceed_webview(){
     if(webview!=nullptr){
@@ -420,14 +364,17 @@ void navigation::proceed_webview(){
     }
     webview=new socialLogin();
     webview->setObjectName("webview");
-    geom->resizer(webview);
+    geom.resizer(webview);
     webview->createWebView();
-    connect(webview,SIGNAL(go(QString)),this,SLOT(go_to(QString)));
+    webview->setAttribute(Qt::WA_AlwaysStackOnTop);
+    connect(webview,SIGNAL(go(QString,QStringList)),this,SLOT(go_to(QString,QStringList)));
     connect(webview,SIGNAL(gotSocialData(QString,QString,QString,QString,QString)),this,SLOT(setSocialData(QString,QString,QString,QString,QString)));
     connect(webview,SIGNAL( gotAppleId(QString)),credentials,SLOT(get_user_by_email(QString)));
+    webview->show();
+    sign_in->toggle_auth(false);
 }
 void navigation::setSocialData(QString fname,QString,QString,QString email,QString token){
-    if(curr_user!=email){
+    if(credentials->curr_user!=email){
         int id=credentials->check_user(email);
         if(id!=0){
             if(debg)qDebug()<<"RECOVERY FROM FACEBOOK";
@@ -440,7 +387,7 @@ void navigation::setSocialData(QString fname,QString,QString,QString email,QStri
     }
 }
 void navigation::proceed_carousel(const QStringList& pars){
-    qDebug()<<"params:"<<pars;
+    if(debg)qDebug()<<"params:"<<pars;
     QStringList params(pars);
     QString title=params.takeFirst();
     QString stime=params.takeFirst();
@@ -448,7 +395,7 @@ void navigation::proceed_carousel(const QStringList& pars){
     QString f_oid=params.takeFirst();
     int title_id=params.takeFirst().toInt();
     if(carousel!=nullptr){
-        if(carousel->title_id==title_id)
+        if(carousel->title_id==title_id && !fav_modified)
             return;
         else {
             qDebug()<<"Carousel destroy";
@@ -457,14 +404,14 @@ void navigation::proceed_carousel(const QStringList& pars){
     }
     carousel=new Carousel();
     carousel->hide();
+    fav_modified=false;
     update();
     offset_ms=0;
     connect(carousel,SIGNAL(download(const QString&,const QString&)),media_queue,SLOT(push_url(const QString&,const QString&)),Qt::QueuedConnection);
     carousel->setObjectName("carousel");
-    geom->resizer(carousel);
+    geom.resizer(carousel);
     carousel->set_fav_items_list(fav_items);
     carousel->set_fav_scenes_list(fav_scenes);
-    qDebug()<<"CARL:"<<fav_items;
     carousel->set_sliders();
     if(stime!=""){
         offset_ms=carousel->hms2ms(stime);
@@ -486,8 +433,10 @@ bool navigation::proceed_media(const QString& on){
     if(!videos){
         videos=new favItems(wgen);
         connect(videos,SIGNAL(go(QString, QStringList)),this,SLOT(go_to(QString,QStringList)));
-        geom->resizer(videos,true);
+        geom.resizer(videos,true);
         videos->init();
+        rwidget->show();
+        rwidget->hide();
     }
     if(on=="prospect"){
         if(credentials->context_id!=-1){
@@ -501,13 +450,21 @@ bool navigation::proceed_media(const QString& on){
     return true;
 }
 void navigation::proceed_wgen(){
+    if(wgen!=nullptr){
+        qDebug()<<"WGEN:OLD";
+        return;
+    }
     wgen=new widgetGen();
     wgen->set_prospect_params(credentials->prospect_settings);
-    wgen->setCoords(geom->m_geo, devicePixelRatio());
-    connect( wgen, SIGNAL( download( const QString&, const QString&, int,bool ) ), media_queue,SLOT(push_url(const QString&,const QString&, int,bool)),Qt::QueuedConnection);
+    wgen->setCoords(geom.m_geo, devicePixelRatio());
+    connect( wgen, SIGNAL( download( const QString, const QString ) ), media_queue,SLOT(push_url(const QString,const QString)),Qt::QueuedConnection);
     connect( wgen, SIGNAL( toggle_fav_video(int,bool)),credentials,SLOT(toggle_fav_video(int,bool)),Qt::QueuedConnection);
     connect( wgen, SIGNAL( del_fav(const QString&, int)),credentials,SLOT(del_fav(const QString&,int)),Qt::QueuedConnection);
+    connect( wgen, SIGNAL( del_fav(const QString&, int)),this,SLOT(setFavModified()),Qt::QueuedConnection);
     connect( wgen, SIGNAL( go(const QString&,const QStringList&)),this,SLOT( go_to(const QString&,const QStringList&)));
+}
+void navigation::setFavModified(){
+    fav_modified=true;
 }
 void navigation::erase_module(){
     QWidget* s=static_cast<QWidget*>(sender());
@@ -515,19 +472,19 @@ void navigation::erase_module(){
 }
 void navigation::proceed_userprof(){
     // USER PROFILE
-    shadow=false;
     if(userprof==nullptr){
         userprof=new userProf();
         userprof->setObjectName("userprof");
         connect(userprof,SIGNAL(go(QString,QStringList)),this,SLOT(go_to(QString,QStringList)),Qt::DirectConnection);
-        geom->resizer(userprof);
+        geom.resizer(userprof);
     }
+    set_labels();
 }
 void navigation::exit_app(){
     QMessageBox::StandardButton reply;
     reply=QMessageBox::question(this,"","Leave now?");
     if(reply==QMessageBox::Yes){
-        //   mthread.exit();
+        setUpdatesEnabled(false);
         while(count()>0){
             currentWidget()->setAttribute(Qt::WA_DeleteOnClose,true);
             currentWidget()->close();
@@ -535,13 +492,16 @@ void navigation::exit_app(){
             QApplication::processEvents();
         }
         mmenu->close();
+        credentials->deleteLater();
+        qDebug()<<qApp->allWidgets()<<qApp->allWindows()<<qApp->findChildren<QImage*>();
+
         QApplication::quit();
     }
 }
 void navigation::proceed_profsettings(bool acc_recovery){
     if(profsettings==nullptr){
         profsettings=new profSettings();
-        geom->resizer(profsettings);
+        geom.resizer(profsettings);
         profsettings->setObjectName("profsettings");
         connect(profsettings,SIGNAL(save_profile()),this,SLOT(save_profile()));
         connect(profsettings,SIGNAL(upd_user(QString,QString,QString,QString)),this,SLOT(update_user(QString,QString,QString,QString)),Qt::QueuedConnection);
@@ -554,7 +514,8 @@ void navigation::proceed_profsettings(bool acc_recovery){
         connect(profsettings,SIGNAL(logout()),this,SLOT(restart_clean()),Qt::QueuedConnection);
         //  connect(profsettings,SIGNAL(set_waiter()),this,SLOT(show_waiter()));
     }
-    profsettings->prop_login=curr_user;
+    set_labels();
+    profsettings->prop_login=credentials->curr_user;
     profsettings->set_recovery_mode(acc_recovery);
     profsettings->setInitVars(credentials->social_type);
 }
@@ -578,25 +539,22 @@ void navigation::update_loc(QString,QString lat,QString lon){
 void navigation::set_labels(){
     if(userprof!=nullptr){
         userprof->set_avatar();
-        userprof->set_user(curr_nick);
+        userprof->set_user(credentials->curr_nick);
         userprof->set_notif(media->count());
+        userprof->corr();
     }
     if(profsettings!=nullptr){
-        profsettings->set_email(curr_user,false);
-        profsettings->set_phone(curr_phone,false);
-        profsettings->set_nick(curr_nick,false);
+        profsettings->set_email(credentials->curr_user,false);
+        profsettings->set_phone(credentials->curr_phone,false);
+        profsettings->set_nick(credentials->curr_nick,false);
         profsettings->set_avatar(false);
-    }
-    if(videos!=nullptr){
-        videos->set_nick(curr_nick);
     }
 }
 void navigation::init_menu(){
     mmenu=new menu(this);
     //  mmenu->setAttribute(Qt::WA_AlwaysStackOnTop,true);
-    QRect r=QApplication::primaryScreen()->geometry();
-    mmenu->setFixedSize(r.width()*0.6,r.height()*0.9);
-    mmenu->setGeometry(width()*0.4,r.height()*0.05,r.width()*0.6,r.height()*0.9);
+    mmenu->setFixedSize(mg.width()*0.5,mg.height()-40);
+    mmenu->setGeometry(width()*0.5,20,mg.width()*0.5,mg.height()-20);
     mmenu->getGeo();
     connect(mmenu,SIGNAL(go(QString,QStringList)),this,SLOT(go_to(QString,QStringList)));
     mmenu->setContext(credentials->is_context());
@@ -613,22 +571,22 @@ void navigation::disableCurrMenuEntry(){
 void navigation::showMenu(){
     if(mmenu==nullptr || count()==0)return;
     mmenu->setVisible(true);
-    mmenu->raise();
-    wgen->menu_opened=true;
-    update();
+    menu_opened=true;
 }
 
 void navigation::hideMenu(){
     if(!mmenu)return;
-    mmenu->hide();
-    wgen->menu_opened=false;
+    mmenu->setVisible(false);
+    menu_opened=false;
+    if(count()>0)
+        currentWidget()->activateWindow();
 }
 void navigation::navigate_upon_user_data(){
-    get_current_user_data();
-    creds_ok=!curr_user.contains("GUEST");
+    creds_ok=!credentials->curr_user.contains("GUEST");
     proceed_wgen();
     updateFavs();
     go_to("sign_in");
+    qDebug()<<"AUTH:"<<creds_ok;
     sign_in->toggle_auth(!creds_ok);
     if(creds_ok){
         go_to("userprof",{});
@@ -651,8 +609,8 @@ void navigation::change_geo(const QRect& r){
     setFixedSize(r.size());
     update();
 }
-navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),menuopened(false),fresh_run(true),
-    rwidget(new QWidget){
+navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),menuopened(false),fresh_run(true),fav_modified(false),
+    prospect_shown(false),rwidget(new QWidget){
     //  setWindowFlag(Qt::FramelessWindowHint);
     //  setWindowState(Qt::WindowFullScreen);
     //   setGeometry(QApplication::primaryScreen()->availableVirtualGeometry());
@@ -668,10 +626,10 @@ navigation::navigation(QWidget *parent) : QStackedWidget(parent),splash(true),me
     gradient2.setColorAt(0, QColor(0,0,0,80));
     gradient2.setColorAt(0.5, QColor(0,0,0,60));
     gradient2.setColorAt(1, QColor(0,0,0,80));
-    debg=false;;
+    debg=false;
+    menu_opened=false;
     media_queue=new downloader(this);
     setObjectName("core");
-    geom=new geofit(this);
     connect(qApp->primaryScreen(),SIGNAL( availableGeometryChanged(const QRect& )),this,SLOT(change_geo(const QRect& )));
     //  connect(media_queue,SIGNAL(need_revalidate_widget(int)),this,SLOT(must_revalidate_widget(int)),Qt::QueuedConnection);
     setAttribute(Qt::WA_TransparentForMouseEvents,true);
@@ -697,6 +655,11 @@ void navigation::activate_current(int i){
     currentWidget()->raise();
 }
 void navigation::paintEvent(QPaintEvent *){
+    if(wgen)
+        if(wgen->top_menu_switcher)
+            qDebug()<<"NAVI:PAINTEEVENT"<<shadow<<wgen->top_menu_switcher->edit->text();
+    int marg=15*width()/400;
+    shadow_geo.setRect(marg,geom.gmarg+marg,geom.m_geo.width()-2*marg,geom.m_geo.height()-2*marg);
     QPainter p(this);
     QPen pen;
     pen.setWidth(1);
@@ -704,7 +667,7 @@ void navigation::paintEvent(QPaintEvent *){
     p.setRenderHints(QPainter::HighQualityAntialiasing);
     p.setPen(pen);
     p.setBrush(gradient);
-    p.fillRect(rect(),p.brush());
+    p.fillRect(geom.a_geo,p.brush());
     p.setPen(QColor(0,0,0,100));
     p.setBrush(QColor(0,0,0,70));
     opac+=.25*(shadow && opac<1.0)-.25*(!shadow && opac>0.0);
@@ -737,17 +700,15 @@ if(opac!=0 && opac!=1){
 }
 */
     void navigation::init_app(){
+    shadow=false;
     showFullScreen();
+    QRect m1=geom.m_geo;
+    QRect m2=geom.a_geo;
+    mg=m2;
+    if(m1.height()>m2.height())mg=m1;
+    setGeometry(mg);
+    setFixedSize(mg.size());
     update();
-    geom->resizer(this);
-    int marg=15*width()/400;
-    qDebug()<<"COORDS:"<<width()<<height();
-
-    shadow_geo.setRect(marg,marg,width()-2*marg,height()-2*marg);
-    curr_user="";
-    s_curr_id="";
-    curr_nick="";
-    curr_phone="";
     offline_mode=false;
     updated=false;
     guest_login=true;
@@ -771,8 +732,8 @@ void navigation::info(QString inf){
     QMessageBox::information(this,"",inf);
 }
 navigation::~navigation(){
-    credentials->deleteLater();
-    wgen->deleteLater();
+    if(credentials)credentials->deleteLater();
+    if(wgen)wgen->deleteLater();
     if(debg)qDebug()<<"WAND:NAVI:~navigation";
     qApp->quit();
 }

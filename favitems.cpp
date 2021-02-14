@@ -9,15 +9,21 @@ favItems::favItems( widgetGen* wg, QWidget *parent ) :
 {
     ui->setupUi( this );
     setAttribute( Qt::WA_DeleteOnClose, true );
-    setAttribute( Qt::WA_TransparentForMouseEvents, false );
+    setAttribute( Qt::WA_TransparentForMouseEvents, false);
     connect(wg,SIGNAL(fav_update(int)),this,SLOT(set_favs_cnt(int)));
+    connect(wg,SIGNAL(setLocked(bool)),this,SLOT(setLocked(bool)));
     star[1].addPixmap(QPixmap( ":/gui/icons/green_dot.png"));
     star[0].addFile(":/gui/icons/green_dot_no_dot.png");
-    glcontainer=new widget_wrapper(this);
-    glcontainer->hide();
     connect(wgen,SIGNAL(set_cnt(int)),this,SLOT(set_favs_cnt(int)));
+    wgen->setParent(this);
+    wgen->showFullScreen();
+}
+void favItems::setLocked(bool l){
+    if(isEnabled()==l)setEnabled(!l);
+    update();
 }
 bool favItems::setContext(QString c){
+    qDebug()<<"SETCONTEXT:"<<c<<search_active;
     context=c;
     setObjectName(c);
     wgen->setContext(c);      /* NEW CONTEXT */
@@ -26,63 +32,63 @@ bool favItems::setContext(QString c){
     return true;
 }
 void favItems::activateContainer(){
-    glcontainer->showFullScreen();
-    glcontainer->activateWindow();
-    glcontainer->raise();
-    glcontainer->update();
-     wgen->top_menu_switcher->show();
-    wgen->top_menu_switcher->raise();
+    if(!wgen->isVisible()){
+        wgen->showFullScreen();
+        wgen->activateWindow();
+        wgen->update();
+    }
+    if(!wgen->top_menu_switcher->isVisible()){
+        wgen->top_menu_switcher->show();
+    }
 }
 void favItems::init(){
     /* INIT once */
     opt_pos=mapToGlobal( ui->b_options->pos() );
     wgen->setDirector(this);
-    //  glcontainer->setWindowFlag(Qt::FramelessWindowHint);
-    glcontainer->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
-    wgen->setContainer(glcontainer);
-    // glcontainer->showFullScreen();
-    glcontainer->setGeometry(rect());
-    glcontainer->setFixedSize(rect().size());
+    //  wgen->setWindowFlag(Qt::FramelessWindowHint);
+    wgen->setSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed );
+    wgen->showFullScreen();
+    wgen->setGeometry(geo.a_geo);
+    wgen->activateWindow();
+    qDebug()<<"GLCONT GEO:"<<wgen->geometry();
+    wgen->setFixedSize(geo.a_geo.size());
+    qDebug()<<"SIZE:"<<wgen->size()<<size()<<geometry();
     //   update();
     /* SET HOT-SPOT HELPERS for switching contentd visible dependent of scroll */
+    wgen->setMarkers();
     wgen->setMRB(0,ui->switch_b_frame_top->geometry().bottom(),0,10);
     wgen->setMRB(1,ui->switch_b_frame->geometry().bottom(),ui->switch_b_frame_top->geometry().bottom(),20);
     /* FILL GL WRAPPERS */
     wgen->setupTopMenuSwitcher(ui->switch_b_frame_top->geometry());
     wgen->setFrames(ui->switch_b_frame_top,ui->frame);
-    glcontainer->setupWrapper({{},{ui->lab_favs_icon,ui->lab_info_items,ui->lab_info_res,ui->lab_info_scenes,ui->lab_info_videos,ui->lab_nick,ui->favs_cnt},{ui->switch_b_frame},{}});
-    glcontainer->setupInfo(ui->prospect_info);
+    wgen->setupWrapper({{},{ui->lab_favs_icon,ui->lab_info_items,ui->lab_info_res,ui->lab_info_scenes,ui->lab_info_videos,ui->favs_cnt,ui->prospect_info},{ui->switch_b_frame},{}});
+    wgen->setProspectInfo(ui->prospect_info);
+    wgen->updateGeometry();
 }
 void favItems::reinit( QString o, QStringList sr, bool cont ){
+    qDebug()<<"Reinit:"<<search_active;
+    wgen->reinit=true;
+    qDebug()<<"FAVS:"<<sr;
     /* (RE)INIT VARS */
-    wgen->restoreCoords();
-    if(!sr.contains("last"))
-    if(sr.contains("search"))
-        search_active=true;
-    wgen->top_menu_switcher->setSearchMode(search_active);
+    search_active=sr.contains("search");
+    if(!context.isEmpty()){
+        wgen->restoreCoords();
+    }
     setContext(o);
+    wgen->setFrames(ui->switch_b_frame_top,ui->frame);
+    if(!sr.contains("last"))
+        wgen->top_menu_switcher->setSearchMode(search_active);
     params=sr;
     ui->b_back->setEnabled(cont);
+    qDebug()<<"b:back:"<<cont;
     wgen->setSelectors(true);
     wgen->top_menu_switcher->raise();
+    qDebug()<<"Reinit2:"<<search_active;
+    setEnabled(true);
 }
-/* MOUSE */
-void favItems::mouseMoveEvent( QMouseEvent*e ){
-    wgen->mouseMove(e);
-}
-void favItems::mousePressEvent( QMouseEvent *e ){
-    wgen->mousePress(e);
-}
-void favItems::mouseReleaseEvent( QMouseEvent *e ){
-    if(wgen->mouseRelease(e)){
-        if(wgen->last_over_brick!=-1){
-            /* GO TO PROSPECT / RESET CONTEXT */
-            if(wgen->currType()=="prospect"){
-                emit go("userprof",{"context",wgen->currItem()->txt_text,QString::number(wgen->currItem()->db_index)});
-            }
-        }
-        wgen->over_brick=-1;
-    }
+void favItems::hideEvent(QHideEvent *e){
+    //   wgen->toggleBricks(false);
+    wgen->top_menu_switcher->edit->releaseKeyboard();
 }
 /* FACTORY */
 
@@ -126,12 +132,6 @@ void favItems::create_prospect_list(int* cnt3,QJsonArray *videos){
                          last_oid);
     }
     wgen->activate();
-    while(!glcontainer->isVisible()){
-        qDebug()<<"RAISING";
-        update();
-        glcontainer->repaint();
-        QApplication::processEvents();
-    }
 }
 
 // fav videos
@@ -194,15 +194,12 @@ void favItems::create_videos_list(int* cnt3,const QJsonArray* videos){
     wgen->activate();
 
 }
-
 // fav scenes
 void favItems::create_scenes_list(int* cnt3,const QJsonArray* jfs){
     int cfs=jfs->count();
     for(int i=0;i<cfs;i++){
         QJsonObject obj=jfs->at(i).toObject();
-        qDebug()<<"obj:"<<obj;
         int fid=getJInt(obj.value("fav_id"));
-        qDebug()<<"SCENES:"<<fid<<obj;
         wgen->make_brick( i,
                          fid,
                          getJInt(obj.value("title_id")),
@@ -236,7 +233,7 @@ void favItems::create_items_list(const QJsonArray* jfi){
                          obj.value("image").toString(),
                          d_carousel+QUrl( obj.value("image").toString() ).fileName(),
                          "","fav_items",
-                        getJInt(obj.value("oid")),
+                         getJInt(obj.value("oid")),
                          obj.value("url").toString());
     }
     set_favs_cnt(cfi);
@@ -253,7 +250,9 @@ void favItems::setStyles(QPushButton* w,QString f){
 // search mode toggler
 void favItems::setMode(QWidget* w,QString f,bool s){
     if(f=="")f="fav";
-    if(!s)s=!search_active;
+    if(!s){
+        s=!search_active;
+    }
     w->setEnabled(context.left(f.length())==f && s);
     w->setVisible(context.left(f.length())==f && s);
     w->update();
@@ -261,7 +260,6 @@ void favItems::setMode(QWidget* w,QString f,bool s){
 
 // configure functionlity and access to module fuctions
 void favItems::updateUi(){
-    ui->lab_nick->hide();
     setMode(ui->lab_info_res,"videos");
     setMode(ui->lab_info_items,"fav_items");
     setMode(ui->lab_info_scenes,"fav_scenes");
@@ -272,33 +270,31 @@ void favItems::updateUi(){
     setMode(ui->b_scenes_2,"",false);
     setMode(ui->b_videos);
     setMode(ui->b_videos_2,"",false);
+    ui->lab_favs_icon->setEnabled(context!="prospect");
+    ui->lab_favs_icon->setVisible(context!="prospect");
+    ui->favs_cnt->setEnabled(context!="prospect");
+    ui->favs_cnt->setVisible(context!="prospect");
+  //  ui->b_items->setEnabled(!context.contains("items"));
+ //   ui->b_scenes->setEnabled(!context.contains("scenes"));
+ //   ui->b_videos->setEnabled(!context.contains("videos"));
+ //   ui->b_items_2->setEnabled(!context.contains("items"));
+  //  ui->b_scenes_2->setEnabled(!context.contains("scenes"));
+  //  ui->b_videos_2->setEnabled(!context.contains("videos"));
     setStyles(ui->b_scenes,"fav_scenes");
     setStyles(ui->b_scenes_2,"fav_scenes");
     setStyles(ui->b_items,"fav_items");
     setStyles( ui->b_items_2,"fav_items");
     setStyles(ui->b_videos,"fav_videos");
     setStyles(ui->b_videos_2,"fav_videos");
-    ui->lab_favs_icon->setEnabled(context!="prospect");
-    ui->lab_favs_icon->setVisible(context!="prospect");
-    ui->favs_cnt->setEnabled(context!="prospect");
-    ui->favs_cnt->setVisible(context!="prospect");
     update();
 }
 
 // items counter - SET
 void favItems::set_favs_cnt( int i ){
-    qDebug()<<"SET FAVS CNT"<<i;
     ui->favs_cnt->setText(QString::number(i));
     update();
-    glcontainer->repaint();
 }
 
-// nick - SET
-void favItems::set_nick( QString ni ){
-    ui->lab_nick->setText( ni );
-    nick = ni;
-    update();
-}
 
 /* UI BUTTONS MANAGEMENT*/
 void favItems::on_b_items_clicked(){
@@ -336,20 +332,15 @@ void favItems::on_b_videos_2_clicked(){
     ui->b_videos->click();
 }
 favItems::~favItems(){
-    wgen->glcontainer->setParent(0);
-    wgen->top_menu_switcher->setParent(0);
     if(future.isRunning())future.waitForFinished();
     qDebug()<<"DELETING FAVS";
     delete ui;
 }
 
-void favItems::on_b_options_2_clicked(bool checked)
-{
-
-}
 // LAST LINE
 
 void favItems::on_b_full_wandizz_clicked()
 {
+    setEnabled(false);
     emit go("full",{});
 }

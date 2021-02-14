@@ -113,7 +113,6 @@ signals :
     void go(const QString,QStringList);
     void here_i_am();
     void start_offset_meter();
-    void show_menu(QPoint);
     void ready();
 public slots :
     void setTitle2(const QString);
